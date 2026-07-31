@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://japan-budget-tool/schemas/seasons.schema.json",
+  "title": "Seasons",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "label", "startMonthDay", "endMonthDay", "severity", "lodgingMultiplierLow", "lodgingMultiplierHigh", "advice", "asOf", "source", "confidence"],
+    "properties": {
+      "id": { "type": "string", "minLength": 1 },
+      "label": { "type": "string", "minLength": 1 },
+      "startMonthDay": { "type": "string", "pattern": "^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$" },
+      "endMonthDay": { "type": "string", "pattern": "^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$" },
+      "severity": { "type": "string", "enum": ["peak", "elevated", "sweet_spot"] },
+      "lodgingMultiplierLow": { "type": "number", "minimum": 0 },
+      "lodgingMultiplierHigh": { "type": "number", "minimum": 0 },
+      "advice": { "type": "string", "minLength": 1 },
+      "asOf": { "type": "string", "format": "date" },
+      "source": { "type": "string", "minLength": 1 },
+      "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+      "notes": { "type": "string" }
+    }
+  }
+}

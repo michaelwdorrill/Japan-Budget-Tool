@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://japan-budget-tool/schemas/cities.schema.json",
+  "title": "Cities",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "name", "region"],
+    "properties": {
+      "id": { "type": "string", "minLength": 1 },
+      "name": { "type": "string", "minLength": 1 },
+      "region": { "type": "string", "minLength": 1 },
+      "airports": {
+        "type": "array",
+        "items": { "type": "string", "enum": ["NRT", "HND", "KIX", "ITM", "CTS", "FUK", "NGO"] }
+      },
+      "notes": { "type": "string" }
+    }
+  }
+}

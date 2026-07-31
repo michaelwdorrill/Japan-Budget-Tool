@@ -1,0 +1,88 @@
+{
+  "accommodationTax": [
+    {
+      "id": "kyoto_2026",
+      "cityId": "kyoto",
+      "effectiveFrom": "2026-03-01",
+      "effectiveTo": null,
+      "structure": "bracket_per_person_per_night",
+      "brackets": [
+        { "minJpy": 0, "maxJpy": 5999, "taxJpy": 200 },
+        { "minJpy": 6000, "maxJpy": 19999, "taxJpy": 400 },
+        { "minJpy": 20000, "maxJpy": 49999, "taxJpy": 1000 },
+        { "minJpy": 50000, "maxJpy": 99999, "taxJpy": 4000 },
+        { "minJpy": 100000, "maxJpy": null, "taxJpy": 10000 }
+      ],
+      "bracketEdgeWarningThresholdPct": 10,
+      "asOf": "2026-07-31",
+      "source": "https://www.city.kyoto.lg.jp/menu2/category/73-9-9-0-0-0-0-0-0-0.html",
+      "confidence": "medium",
+      "notes": "The ¥100,000/person/night cliff is severe: a ¥120,000 suite for two pays ¥20,000/night in tax alone. The app must warn when a rate is within the threshold above of a bracket edge."
+    },
+    {
+      "id": "tokyo_2020_pre2027",
+      "cityId": "tokyo",
+      "effectiveFrom": "2020-01-01",
+      "effectiveTo": "2027-03-31",
+      "structure": "bracket_per_person_per_night",
+      "brackets": [
+        { "minJpy": 0, "maxJpy": 9999, "taxJpy": 0 },
+        { "minJpy": 10000, "maxJpy": 14999, "taxJpy": 100 },
+        { "minJpy": 15000, "maxJpy": null, "taxJpy": 200 }
+      ],
+      "asOf": "2026-07-31",
+      "source": "https://www.tax.metro.tokyo.lg.jp/english/tax_guide/16.html",
+      "confidence": "medium"
+    },
+    {
+      "id": "tokyo_2027_percentage",
+      "cityId": "tokyo",
+      "effectiveFrom": "2027-04-01",
+      "effectiveTo": null,
+      "structure": "percentage_per_person_per_night",
+      "percentageOfRate": 3,
+      "asOf": "2026-07-31",
+      "source": "https://www.tax.metro.tokyo.lg.jp/english/tax_guide/16.html",
+      "confidence": "low",
+      "notes": "Announced move from fixed-fee to a 3% percentage-based tax for FY2027. Modeled as a dated rule (effectiveFrom) so the switch is a data change, not a code change. Verify exact effective date and rate before FY2027 trips."
+    },
+    {
+      "id": "osaka_2017",
+      "cityId": "osaka",
+      "effectiveFrom": "2017-01-01",
+      "effectiveTo": null,
+      "structure": "bracket_per_person_per_night",
+      "brackets": [
+        { "minJpy": 0, "maxJpy": 6999, "taxJpy": 0 },
+        { "minJpy": 7000, "maxJpy": 14999, "taxJpy": 100 },
+        { "minJpy": 15000, "maxJpy": 19999, "taxJpy": 200 },
+        { "minJpy": 20000, "maxJpy": null, "taxJpy": 300 }
+      ],
+      "asOf": "2026-07-31",
+      "source": "https://www.pref.osaka.lg.jp/somuka/zeimu/osakashukuhakuzei.html",
+      "confidence": "medium"
+    },
+    {
+      "id": "niseko_2024",
+      "cityId": "niseko",
+      "effectiveFrom": "2024-11-01",
+      "effectiveTo": null,
+      "structure": "flat_per_person_per_night",
+      "flatTaxJpy": 2000,
+      "asOf": "2026-07-31",
+      "source": "https://www.town.niseko.lg.jp",
+      "confidence": "medium",
+      "notes": "Niseko is not one of the 8 seed cities in cities.json; included to demonstrate that adding a taxed municipality is a one-record data change, per §3.2."
+    }
+  ],
+  "departureTax": {
+    "id": "international_tourist_departure_tax",
+    "amountJpy": 3000,
+    "basis": "per_person_per_trip",
+    "collectedVia": "airfare",
+    "asOf": "2026-07-31",
+    "source": "https://www.mlit.go.jp",
+    "confidence": "low",
+    "notes": "Verify — sources conflict with an older ¥1,000 figure, per build spec §3.2."
+  }
+}
