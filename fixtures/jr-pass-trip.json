@@ -1,0 +1,43 @@
+{
+  "party": { "adults": 2, "children": [{ "age": 8 }], "rooms": 2 },
+  "timing": { "startDate": "2026-09-25", "season": null, "nights": 9 },
+  "itinerary": {
+    "arrivalAirport": "NRT",
+    "departureAirport": "NRT",
+    "legs": [
+      {
+        "cityId": "tokyo",
+        "nights": 3,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "teamlab_planets_tokyo", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "kyoto",
+        "nights": 3,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "standard" },
+        "activities": [{ "activityId": "kinkakuji_entry_kyoto", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "hiroshima",
+        "nights": 3,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "peace_memorial_museum_hiroshima", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      }
+    ]
+  },
+  "flight": { "mode": "cash", "cashEstimateUsd": 1100, "taxesAndFeesUsd": 140 },
+  "money": { "jpyPerUsd": 150, "fxStressPct": 10, "cardFxFeePct": 0, "cashJpyPerPersonPerDay": 3500, "contingencyPct": 10 },
+  "transport": { "strategy": "jr_national_7day_ordinary", "railClass": "ordinary", "luggageForwarding": false }
+}

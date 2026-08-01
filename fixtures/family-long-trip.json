@@ -1,0 +1,43 @@
+{
+  "party": { "adults": 2, "children": [{ "age": 8 }, { "age": 3 }], "rooms": 2 },
+  "timing": { "startDate": "2026-08-10", "season": null, "nights": 11 },
+  "itinerary": {
+    "arrivalAirport": "NRT",
+    "departureAirport": "KIX",
+    "legs": [
+      {
+        "cityId": "tokyo",
+        "nights": 4,
+        "lodgingTier": "ryokan_hanmeshi",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "shibuya_sky_tokyo", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "kyoto",
+        "nights": 4,
+        "lodgingTier": "luxury",
+        "food": { "breakfast": "nice", "lunch": "standard", "dinner": "nice" },
+        "activities": [{ "activityId": "kinkakuji_entry_kyoto", "quantity": 1 }, { "activityId": "kiyomizudera_entry_kyoto", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 1
+      },
+      {
+        "cityId": "osaka",
+        "nights": 3,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "standard" },
+        "activities": [{ "activityId": "universal_studios_japan_osaka", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      }
+    ]
+  },
+  "flight": { "mode": "cash", "cashEstimateUsd": 1050, "taxesAndFeesUsd": 130 },
+  "money": { "jpyPerUsd": 150, "fxStressPct": 10, "cardFxFeePct": 3, "cashJpyPerPersonPerDay": 3000, "contingencyPct": 12 },
+  "transport": { "strategy": "point_to_point", "railClass": "ordinary", "luggageForwarding": true }
+}

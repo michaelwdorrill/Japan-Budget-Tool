@@ -1,0 +1,43 @@
+{
+  "party": { "adults": 2, "children": [], "rooms": 1 },
+  "timing": { "startDate": "2026-11-10", "season": null, "nights": 7 },
+  "itinerary": {
+    "arrivalAirport": "HND",
+    "departureAirport": "HND",
+    "legs": [
+      {
+        "cityId": "tokyo",
+        "nights": 3,
+        "lodgingTier": "business",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "shibuya_sky_tokyo", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "hakone",
+        "nights": 2,
+        "lodgingTier": "ryokan_hanmeshi",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "hakone_pirate_ship_ropeway", "quantity": 1 }, { "activityId": "hakone_open_air_museum", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "tokyo",
+        "nights": 2,
+        "lodgingTier": "business",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "standard" },
+        "activities": [],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      }
+    ]
+  },
+  "flight": { "mode": "exclude", "taxesAndFeesUsd": 0 },
+  "money": { "jpyPerUsd": 150, "fxStressPct": 8, "cardFxFeePct": 3, "cashJpyPerPersonPerDay": 3500, "contingencyPct": 10 },
+  "transport": { "strategy": "point_to_point", "railClass": "ordinary", "luggageForwarding": false }
+}

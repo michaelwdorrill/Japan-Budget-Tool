@@ -1,0 +1,43 @@
+{
+  "party": { "adults": 2, "children": [], "rooms": 1 },
+  "timing": { "startDate": "2026-05-20", "season": null, "nights": 10 },
+  "itinerary": {
+    "arrivalAirport": "NRT",
+    "departureAirport": "KIX",
+    "legs": [
+      {
+        "cityId": "tokyo",
+        "nights": 4,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "standard" },
+        "activities": [{ "activityId": "teamlab_planets_tokyo", "quantity": 1 }, { "activityId": "shibuya_sky_tokyo", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "kyoto",
+        "nights": 3,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "standard", "dinner": "standard" },
+        "activities": [{ "activityId": "kinkakuji_entry_kyoto", "quantity": 1 }, { "activityId": "kiyomizudera_entry_kyoto", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 1
+      },
+      {
+        "cityId": "osaka",
+        "nights": 3,
+        "lodgingTier": "business",
+        "food": { "breakfast": "konbini", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "osaka_castle_entry", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      }
+    ]
+  },
+  "flight": { "mode": "cash", "cashEstimateUsd": 1200, "taxesAndFeesUsd": 150 },
+  "money": { "jpyPerUsd": 155, "fxStressPct": 10, "cardFxFeePct": 0, "cashJpyPerPersonPerDay": 4000, "contingencyPct": 10 },
+  "transport": { "strategy": "auto", "railClass": "ordinary", "luggageForwarding": false }
+}

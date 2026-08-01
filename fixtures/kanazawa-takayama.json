@@ -1,0 +1,53 @@
+{
+  "party": { "adults": 2, "children": [], "rooms": 1 },
+  "timing": { "startDate": "2026-06-05", "season": null, "nights": 9 },
+  "itinerary": {
+    "arrivalAirport": "NRT",
+    "departureAirport": "NRT",
+    "legs": [
+      {
+        "cityId": "tokyo",
+        "nights": 3,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "standard" },
+        "activities": [{ "activityId": "ghibli_museum_tokyo", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "kanazawa",
+        "nights": 2,
+        "lodgingTier": "business",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "kenrokuen_garden_kanazawa", "quantity": 1 }, { "activityId": "21st_century_museum_kanazawa", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "takayama",
+        "nights": 2,
+        "lodgingTier": "ryokan_hanmeshi",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "hida_folk_village_takayama", "quantity": 1 }, { "activityId": "sake_brewery_tour_takayama", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "tokyo",
+        "nights": 2,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      }
+    ]
+  },
+  "flight": { "mode": "points", "taxesAndFeesUsd": 80, "pointsUsed": 120000, "centsPerPoint": 1.3 },
+  "money": { "jpyPerUsd": 150, "fxStressPct": 10, "cardFxFeePct": 0, "cashJpyPerPersonPerDay": 3500, "contingencyPct": 10 },
+  "transport": { "strategy": "point_to_point", "railClass": "ordinary", "luggageForwarding": false }
+}
