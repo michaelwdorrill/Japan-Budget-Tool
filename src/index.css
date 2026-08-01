@@ -124,6 +124,39 @@ h1 {
   font-size: 0.85rem;
 }
 
+.guidance-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.guidance-panel__title {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.guidance-panel__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guidance-panel__item {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.guidance-panel__item--warning {
+  color: var(--warning);
+}
+
 .share-link {
   border: 1px solid var(--border);
   border-radius: 8px;
