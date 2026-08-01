@@ -85,6 +85,13 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
+.running-total__jpy {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .running-total__party {
   font-size: 0.85rem;
   color: var(--text-muted);
