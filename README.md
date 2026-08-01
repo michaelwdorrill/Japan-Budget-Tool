@@ -4,9 +4,10 @@ A static, client-side SPA that turns qualitative trip choices into a
 per-person budget for a trip to Japan, with an honest uncertainty range.
 See `japantripbudgetspec.md` for the full build spec.
 
-Status: Phase 4 (transport optimizer) — deterministic cost engine plus the
-JR Pass/regional-pass/discount-product optimizer, independently verified in
-R; no UI yet.
+Status: Phase 5 (UI wizard) — a working 7-step wizard over the
+deterministic engine, with the full trip state serialized into a
+shareable URL. Uncertainty (Monte Carlo/P80) and the guidance rules
+engine are still to come.
 
 ## Stack
 
@@ -50,3 +51,12 @@ package:
 npm run generate:fixtures   # emits /fixtures/expected/*.json from the TS engine
 Rscript verify/verify.R     # recomputes independently in R, diffs to the yen
 ```
+
+## UI wizard
+
+`npm run dev` and open the local URL for the 7-step wizard (§5.3): who and
+when, where, sleep, eat, do, getting around, and money, with a running
+total in the sidebar. The entire trip is encoded into the URL's `t` query
+param (compressed with `lz-string`) — that's the persistence mechanism,
+no accounts or localStorage. Copy the address bar to share or restore a
+trip in a fresh browser.

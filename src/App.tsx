@@ -1,9 +1,14 @@
+import { TripConfigProvider } from './state/TripConfigContext'
+import { Wizard } from './wizard/Wizard'
+
 function App() {
   return (
-    <main>
-      <h1>Japan Trip Budget Estimator</h1>
-      <p>Phase 0 scaffold — no functionality yet.</p>
-    </main>
+    <TripConfigProvider>
+      <main>
+        <h1>Japan Trip Budget Estimator</h1>
+        <Wizard />
+      </main>
+    </TripConfigProvider>
   )
 }
 

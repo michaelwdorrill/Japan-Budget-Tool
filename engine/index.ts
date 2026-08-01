@@ -121,5 +121,10 @@ export function computeBudget(config: TripConfig, priceData: PriceData, now: Dat
 export { usdToJpy, jpyToUsd, fxStress } from './money'
 export { multiplyByBasis, totalPeople, fareEquivalentPeople, childFareFraction } from './basis'
 export { lodgingTax, departureTax } from './tax'
-export { loadPriceData } from './loadPriceData'
 export { optimizeTransport, findTransportOption } from './transportOptimizer'
+
+// loadPriceData is deliberately NOT re-exported here: it does `node:fs` I/O
+// and this barrel is imported by browser code (src/). Node-only consumers
+// (the CLI, generate-expected-fixtures) import it directly from
+// './loadPriceData' instead, keeping the browser-facing module graph
+// free of Node built-ins.
