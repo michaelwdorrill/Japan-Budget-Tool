@@ -13,6 +13,7 @@ import { computeConnectivity } from './connectivity'
 import { computeShopping } from './shopping'
 import type { BracketEdgeWarning } from './tax'
 import type { TransportOption } from './transportOptimizer'
+import type { SeasonRecord } from './priceData'
 
 // Categories B-H per §3.1: the base that contingency (I1) is a percentage
 // of. Category A (getting there) is excluded — those costs are booked once
@@ -41,6 +42,7 @@ export interface BudgetResult {
   bracketEdgeWarnings: Array<{ cityId: string; warning: BracketEdgeWarning }>
   referenceDate: string
   transportOptions: TransportOption[] // §4.2 ranked list, ascending by cost; show the top three
+  seasonOverlaps: Array<{ cityId: string; legIndex: number; season: SeasonRecord }> // §5.1
 }
 
 function emptyCategoryTotals(): Record<Category, number> {
@@ -109,5 +111,6 @@ export function computeBudget(config: TripConfig, priceData: PriceData, now: Dat
     bracketEdgeWarnings: lodging.bracketEdgeWarnings,
     referenceDate,
     transportOptions: transport.options,
+    seasonOverlaps: lodging.seasonOverlaps,
   }
 }
