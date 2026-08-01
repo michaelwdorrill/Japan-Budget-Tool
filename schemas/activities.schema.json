@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://japan-budget-tool/schemas/activities.schema.json",
+  "title": "Activities",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["namedActivities", "activityTierFallback"],
+  "properties": {
+    "namedActivities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "cityId", "category", "basis", "low", "expected", "high", "durationMinutes", "asOf", "source", "confidence"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "cityId": { "type": "string" },
+          "category": { "type": "string", "const": "activities" },
+          "basis": { "type": "string", "const": "per_person_per_use" },
+          "low": { "type": "integer", "minimum": 0 },
+          "expected": { "type": "integer", "minimum": 0 },
+          "high": { "type": "integer", "minimum": 0 },
+          "durationMinutes": { "type": "integer", "minimum": 0 },
+          "advanceBookingLeadTime": { "type": "string" },
+          "asOf": { "type": "string", "format": "date" },
+          "source": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "activityTierFallback": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "tier", "category", "basis", "low", "expected", "high", "asOf", "source", "confidence"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "tier": { "type": "string", "enum": ["free_walking", "light", "standard", "premium"] },
+          "category": { "type": "string", "const": "activities" },
+          "basis": { "type": "string", "const": "per_person_per_day" },
+          "low": { "type": "integer", "minimum": 0 },
+          "expected": { "type": "integer", "minimum": 0 },
+          "high": { "type": "integer", "minimum": 0 },
+          "asOf": { "type": "string", "format": "date" },
+          "source": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}

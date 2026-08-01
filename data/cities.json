@@ -1,0 +1,58 @@
+[
+  {
+    "id": "tokyo",
+    "name": "Tokyo",
+    "region": "Kanto",
+    "airports": ["NRT", "HND"],
+    "notes": "Primary Golden Route anchor; also common arrival/departure point."
+  },
+  {
+    "id": "kyoto",
+    "name": "Kyoto",
+    "region": "Kansai",
+    "airports": [],
+    "notes": "No airport; reached by shinkansen. Has its own accommodation tax schedule (see taxes.json)."
+  },
+  {
+    "id": "osaka",
+    "name": "Osaka",
+    "region": "Kansai",
+    "airports": ["KIX", "ITM"],
+    "notes": "Common Kansai gateway; frequently used as a cheaper base for Kyoto day trips."
+  },
+  {
+    "id": "hakone",
+    "name": "Hakone",
+    "region": "Kanto",
+    "airports": [],
+    "notes": "Onsen town, common 1-2 night side trip from Tokyo."
+  },
+  {
+    "id": "nara",
+    "name": "Nara",
+    "region": "Kansai",
+    "airports": [],
+    "notes": "Usually a day trip from Kyoto or Osaka rather than an overnight base."
+  },
+  {
+    "id": "hiroshima",
+    "name": "Hiroshima",
+    "region": "Chugoku",
+    "airports": [],
+    "notes": "Reached via Sanyo Shinkansen; gateway to Miyajima."
+  },
+  {
+    "id": "kanazawa",
+    "name": "Kanazawa",
+    "region": "Chubu",
+    "airports": [],
+    "notes": "Reached via Hokuriku Shinkansen from Tokyo."
+  },
+  {
+    "id": "takayama",
+    "name": "Takayama",
+    "region": "Chubu",
+    "airports": [],
+    "notes": "Reached via limited express from Nagoya; no shinkansen access."
+  }
+]
