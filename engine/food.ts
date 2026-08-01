@@ -1,11 +1,16 @@
 import type { FoodTier, Leg, TripConfig } from './trip'
 import type { PriceData } from './priceData'
+import type { Tier } from './price'
 import { multiplyByBasisRange, totalPeople } from './basis'
 import { findPrice, findPriceById } from './priceLookup'
 import type { LineItem } from './lineItem'
 import { sumLineItems } from './lineItem'
 
 type MealSlot = 'breakfast' | 'lunch' | 'dinner'
+
+// Lodging tiers whose rate already includes dinner and breakfast (§2.3):
+// a ryokan-with-meals, or a mountain hut on a multi-day climb.
+const MEALS_INCLUDED_TIERS: Tier[] = ['ryokan_hanmeshi', 'mountain_hut']
 
 function mealCost(slot: MealSlot, tier: FoodTier, people: number, nights: number, priceData: PriceData): LineItem {
   const record = findPrice(
@@ -25,17 +30,18 @@ function mealCost(slot: MealSlot, tier: FoodTier, people: number, nights: number
 }
 
 // E1-E3: breakfast/lunch/dinner by tier, per leg. When a leg's lodging tier
-// is ryokan_hanmeshi, dinner and breakfast are already included in the room
-// rate (§2.3) and must be zeroed here to avoid double-counting.
+// already bundles meals (ryokan_hanmeshi, mountain_hut), dinner and
+// breakfast are already included in the room rate (§2.3) and must be
+// zeroed here to avoid double-counting.
 export function legFoodCost(leg: Leg, people: number, priceData: PriceData): LineItem[] {
-  const isRyokanHanmeshi = leg.lodgingTier === 'ryokan_hanmeshi'
+  const mealsIncluded = MEALS_INCLUDED_TIERS.includes(leg.lodgingTier)
   const lineItems: LineItem[] = []
 
-  if (!isRyokanHanmeshi) {
+  if (!mealsIncluded) {
     lineItems.push(mealCost('breakfast', leg.food.breakfast, people, leg.nights, priceData))
   }
   lineItems.push(mealCost('lunch', leg.food.lunch, people, leg.nights, priceData))
-  if (!isRyokanHanmeshi) {
+  if (!mealsIncluded) {
     lineItems.push(mealCost('dinner', leg.food.dinner, people, leg.nights, priceData))
   }
 

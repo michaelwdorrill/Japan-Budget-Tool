@@ -1,0 +1,138 @@
+{
+  "party": { "adults": 1, "children": [], "rooms": 1 },
+  "timing": { "startDate": "2027-09-04", "season": null, "nights": 16 },
+  "itinerary": {
+    "arrivalAirport": "HND",
+    "departureAirport": "HND",
+    "legs": [
+      {
+        "cityId": "tokyo",
+        "nights": 2,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "standard", "dinner": "standard" },
+        "activities": [{ "activityId": "nakano_broadway_retro_tokyo", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "kawaguchiko",
+        "nights": 1,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "kawaguchiko",
+        "nights": 1,
+        "lodgingTier": "mountain_hut",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "mt_fuji_climbing_permit", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "hakone",
+        "nights": 2,
+        "lodgingTier": "ryokan_hanmeshi",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "hakone_open_air_museum", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "kyoto",
+        "nights": 2,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "standard", "dinner": "nice" },
+        "activities": [{ "activityId": "kinkakuji_entry_kyoto", "quantity": 1 }, { "activityId": "kiyomizudera_entry_kyoto", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 1
+      },
+      {
+        "cityId": "osaka",
+        "nights": 2,
+        "lodgingTier": "business",
+        "food": { "breakfast": "konbini", "lunch": "casual", "dinner": "standard" },
+        "activities": [{ "activityId": "kishiwada_danjiri_matsuri", "quantity": 1 }, { "activityId": "osaka_castle_entry", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 1
+      },
+      {
+        "cityId": "hiroshima",
+        "nights": 1,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "standard" },
+        "activities": [{ "activityId": "miyajima_ferry_itsukushima", "quantity": 1 }, { "activityId": "okunoshima_rabbit_island", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "onomichi",
+        "nights": 1,
+        "lodgingTier": "business",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "onomichi_temple_walk", "quantity": 1 }, { "activityId": "shimanami_kaido_bike_rental", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "imabari",
+        "nights": 1,
+        "lodgingTier": "business",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "imabari_castle_entry", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "iyavalley",
+        "nights": 1,
+        "lodgingTier": "upscale",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "iya_kazurabashi_vine_bridge", "quantity": 1 }, { "activityId": "iya_gorge_boat_ride", "quantity": 1 }],
+        "activityTierFallback": "free_walking",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "osaka",
+        "nights": 0,
+        "lodgingTier": "business",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [],
+        "activityTierFallback": "free_walking",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "tokyo",
+        "nights": 2,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "standard", "dinner": "standard" },
+        "activities": [
+          { "activityId": "sumo_tournament_tokyo", "quantity": 1 },
+          { "activityId": "tokyo_dome_baseball", "quantity": 1 },
+          { "activityId": "rocky_top_bar_tokyo", "quantity": 1 }
+        ],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 1
+      }
+    ]
+  },
+  "flight": { "mode": "points", "taxesAndFeesUsd": 120, "pointsUsed": 120000, "centsPerPoint": 1.3 },
+  "money": { "jpyPerUsd": 150, "fxStressPct": 10, "cardFxFeePct": 0, "cashJpyPerPersonPerDay": 4000, "contingencyPct": 12 },
+  "shopping": { "personalBudgetJpy": 25000 },
+  "transport": { "strategy": "auto", "railClass": "ordinary", "luggageForwarding": true }
+}

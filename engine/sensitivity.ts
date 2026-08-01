@@ -20,6 +20,9 @@ export interface SensitivityFactor {
 const LODGING_TIER_LADDER: Tier[] = ['hostel', 'business', 'midrange', 'upscale', 'luxury']
 const FOOD_TIER_LADDER: FoodTier[] = ['konbini', 'casual', 'standard', 'nice', 'splurge']
 const ACTIVITY_TIER_LADDER: ActivityTier[] = ['free_walking', 'light', 'standard', 'premium']
+// Meals-included tiers (ryokan_hanmeshi, mountain_hut) aren't on the
+// niceness ladder and zero out dinner — keep food.ts's MEALS_INCLUDED_TIERS in sync.
+const MEALS_INCLUDED_TIERS: Tier[] = ['ryokan_hanmeshi', 'mountain_hut']
 
 function cloneConfig(config: TripConfig): TripConfig {
   return structuredClone(config)
@@ -64,7 +67,7 @@ function shiftNights(config: TripConfig, delta: number): TripConfig {
 function shiftLodgingTier(config: TripConfig, delta: number, priceData: PriceData): TripConfig {
   const next = cloneConfig(config)
   for (const leg of next.itinerary.legs) {
-    if (leg.lodgingTier === 'ryokan_hanmeshi') continue // not on the niceness ladder
+    if (MEALS_INCLUDED_TIERS.includes(leg.lodgingTier)) continue // not on the niceness ladder
     leg.lodgingTier = shiftWithinAvailable(LODGING_TIER_LADDER, leg.lodgingTier, delta, availableLodgingTiers(leg.cityId, priceData))
   }
   return next
@@ -80,7 +83,7 @@ function shiftDinnerTier(config: TripConfig, delta: number, priceData: PriceData
   const next = cloneConfig(config)
   const available = availableFoodTiers('dinner', priceData)
   for (const leg of next.itinerary.legs) {
-    if (leg.lodgingTier === 'ryokan_hanmeshi') continue // dinner is zeroed for this leg regardless
+    if (MEALS_INCLUDED_TIERS.includes(leg.lodgingTier)) continue // dinner is zeroed for this leg regardless
     leg.food.dinner = shiftWithinAvailable(FOOD_TIER_LADDER, leg.food.dinner, delta, available)
   }
   return next
