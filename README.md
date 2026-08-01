@@ -4,8 +4,9 @@ A static, client-side SPA that turns qualitative trip choices into a
 per-person budget for a trip to Japan, with an honest uncertainty range.
 See `japantripbudgetspec.md` for the full build spec.
 
-Status: Phase 3 (CLI harness + R cross-check) — deterministic cost engine
-is implemented and independently verified; no UI yet.
+Status: Phase 4 (transport optimizer) — deterministic cost engine plus the
+JR Pass/regional-pass/discount-product optimizer, independently verified in
+R; no UI yet.
 
 ## Stack
 
@@ -32,8 +33,10 @@ npm run build              # tsc -b && vite build
 npm run budget -- fixtures/golden-route.json
 ```
 
-Prints a full line-item breakdown for a trip config JSON file. See
-`/fixtures` for example configs.
+Prints a full line-item breakdown for a trip config JSON file, plus the
+top 3 intercity transport options (point-to-point vs. national/regional
+passes vs. discount-product substitutions) with cost, added travel time,
+and a one-line "why" (§4.2). See `/fixtures` for example configs.
 
 ## R cross-check
 

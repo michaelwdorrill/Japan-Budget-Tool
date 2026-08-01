@@ -12,10 +12,12 @@ import { computeActivities } from './activities'
 import { computeConnectivity } from './connectivity'
 import { computeShopping } from './shopping'
 import type { BracketEdgeWarning } from './tax'
+import type { TransportOption } from './transportOptimizer'
 
 export type { PriceData } from './priceData'
 export type { TripConfig, Leg } from './trip'
 export type { LineItem } from './lineItem'
+export type { TransportOption } from './transportOptimizer'
 
 // Categories B-H per §3.1: the base that contingency (I1) is a percentage
 // of. Category A (getting there) is excluded — those costs are booked once
@@ -42,6 +44,7 @@ export interface BudgetResult {
   pointsOpportunityCostUsd: number // §7: never added to totalJpyParty
   bracketEdgeWarnings: Array<{ cityId: string; warning: BracketEdgeWarning }>
   referenceDate: string
+  transportOptions: TransportOption[] // §4.2 ranked list, ascending by cost; show the top three
 }
 
 function emptyCategoryTotals(): Record<Category, number> {
@@ -109,6 +112,7 @@ export function computeBudget(config: TripConfig, priceData: PriceData, now: Dat
     pointsOpportunityCostUsd: gettingThere.pointsOpportunityCostUsd,
     bracketEdgeWarnings: lodging.bracketEdgeWarnings,
     referenceDate,
+    transportOptions: transport.options,
   }
 }
 
@@ -118,3 +122,4 @@ export { usdToJpy, jpyToUsd, fxStress } from './money'
 export { multiplyByBasis, totalPeople, fareEquivalentPeople, childFareFraction } from './basis'
 export { lodgingTax, departureTax } from './tax'
 export { loadPriceData } from './loadPriceData'
+export { optimizeTransport, findTransportOption } from './transportOptimizer'

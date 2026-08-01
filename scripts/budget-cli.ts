@@ -86,6 +86,17 @@ function main() {
       `\n⚠ ${cityId}: lodging rate is within the warning threshold of a tax bracket edge at ¥${warning.edgeJpy.toLocaleString('en-US')}/person/night (Δ¥${warning.taxDeltaJpyPerPersonPerNight.toLocaleString('en-US')}/person/night if it crosses).`,
     )
   }
+
+  if (result.transportOptions.length > 1) {
+    console.log(`\nIntercity transport options (top ${Math.min(3, result.transportOptions.length)} of ${result.transportOptions.length}, §4.2):`)
+    for (const option of result.transportOptions.slice(0, 3)) {
+      const savings = option.savingsVsPointToPointJpy
+      const savingsTag = savings > 0 ? `saves ${formatJpy(savings)}` : savings < 0 ? `costs ${formatJpy(-savings)} more` : 'baseline'
+      const timeTag = option.addedTravelTimeMinutes > 0 ? `, +${option.addedTravelTimeMinutes}min` : ''
+      console.log(`  ${option.label.padEnd(40)} ${formatJpy(option.totalJpy).padStart(12)}  (${savingsTag} vs point-to-point${timeTag})`)
+      console.log(`    ${option.why}`)
+    }
+  }
 }
 
 main()
