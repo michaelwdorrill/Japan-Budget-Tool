@@ -1,0 +1,34 @@
+{
+  "party": { "adults": 2, "children": [], "rooms": 1 },
+  "timing": { "startDate": "2026-04-02", "season": null, "nights": 6 },
+  "itinerary": {
+    "arrivalAirport": "HND",
+    "departureAirport": "KIX",
+    "legs": [
+      {
+        "cityId": "tokyo",
+        "nights": 3,
+        "lodgingTier": "luxury",
+        "food": { "breakfast": "nice", "lunch": "nice", "dinner": "splurge" },
+        "activities": [{ "activityId": "teamlab_planets_tokyo", "quantity": 2 }, { "activityId": "sumo_tournament_tokyo", "quantity": 1 }],
+        "activityTierFallback": "premium",
+        "dayTrips": [],
+        "splurgeMeals": 2
+      },
+      {
+        "cityId": "kyoto",
+        "nights": 3,
+        "lodgingTier": "luxury",
+        "food": { "breakfast": "nice", "lunch": "splurge", "dinner": "splurge" },
+        "activities": [{ "activityId": "tea_ceremony_kyoto", "quantity": 2 }, { "activityId": "kimono_rental_kyoto", "quantity": 2 }],
+        "activityTierFallback": "premium",
+        "dayTrips": [],
+        "splurgeMeals": 1
+      }
+    ]
+  },
+  "flight": { "mode": "points", "taxesAndFeesUsd": 90, "pointsUsed": 180000, "centsPerPoint": 1.5 },
+  "money": { "jpyPerUsd": 158, "fxStressPct": 10, "cardFxFeePct": 0, "cashJpyPerPersonPerDay": 6000, "contingencyPct": 5 },
+  "shopping": { "personalBudgetJpy": 80000 },
+  "transport": { "strategy": "point_to_point", "railClass": "green", "luggageForwarding": false }
+}

@@ -20,3 +20,10 @@ jobs:
       - run: npm run validate:data
       - run: npm run test:coverage
       - run: npm run build
+      - name: Install R
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends r-base-core r-cran-jsonlite
+      - run: npm run generate:fixtures
+      - name: Cross-check TS engine against independent R reimplementation
+        run: Rscript verify/verify.R

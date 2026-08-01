@@ -1,0 +1,53 @@
+{
+  "party": { "adults": 2, "children": [], "rooms": 1 },
+  "timing": { "startDate": "2026-11-15", "season": null, "nights": 8 },
+  "itinerary": {
+    "arrivalAirport": "NRT",
+    "departureAirport": "KIX",
+    "legs": [
+      {
+        "cityId": "tokyo",
+        "nights": 2,
+        "lodgingTier": "upscale",
+        "food": { "breakfast": "nice", "lunch": "standard", "dinner": "standard" },
+        "activities": [],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "kyoto",
+        "nights": 2,
+        "lodgingTier": "upscale",
+        "food": { "breakfast": "nice", "lunch": "standard", "dinner": "standard" },
+        "activities": [{ "activityId": "kimono_rental_kyoto", "quantity": 2 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "hiroshima",
+        "nights": 2,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "standard" },
+        "activities": [{ "activityId": "peace_memorial_museum_hiroshima", "quantity": 1 }, { "activityId": "miyajima_ferry_itsukushima", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "osaka",
+        "nights": 2,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      }
+    ]
+  },
+  "flight": { "mode": "cash", "cashEstimateUsd": 1300, "taxesAndFeesUsd": 160 },
+  "money": { "jpyPerUsd": 152, "fxStressPct": 12, "cardFxFeePct": 0, "cashJpyPerPersonPerDay": 4000, "contingencyPct": 10 },
+  "transport": { "strategy": "point_to_point", "railClass": "green", "luggageForwarding": true }
+}

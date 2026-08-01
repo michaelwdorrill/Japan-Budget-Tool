@@ -1,0 +1,53 @@
+{
+  "party": { "adults": 1, "children": [], "rooms": 1 },
+  "timing": { "startDate": "2026-10-05", "season": null, "nights": 8 },
+  "itinerary": {
+    "arrivalAirport": "KIX",
+    "departureAirport": "KIX",
+    "legs": [
+      {
+        "cityId": "osaka",
+        "nights": 3,
+        "lodgingTier": "hostel",
+        "food": { "breakfast": "konbini", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "universal_studios_japan_osaka", "quantity": 1 }],
+        "activityTierFallback": "standard",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "kyoto",
+        "nights": 3,
+        "lodgingTier": "business",
+        "food": { "breakfast": "casual", "lunch": "standard", "dinner": "nice" },
+        "activities": [{ "activityId": "tea_ceremony_kyoto", "quantity": 1 }],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "nara",
+        "nights": 1,
+        "lodgingTier": "midrange",
+        "food": { "breakfast": "casual", "lunch": "casual", "dinner": "casual" },
+        "activities": [{ "activityId": "todaiji_entry_nara", "quantity": 1 }, { "activityId": "nara_park_deer_crackers", "quantity": 2 }],
+        "activityTierFallback": "free_walking",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      },
+      {
+        "cityId": "osaka",
+        "nights": 1,
+        "lodgingTier": "hostel",
+        "food": { "breakfast": "konbini", "lunch": "casual", "dinner": "casual" },
+        "activities": [],
+        "activityTierFallback": "light",
+        "dayTrips": [],
+        "splurgeMeals": 0
+      }
+    ]
+  },
+  "flight": { "mode": "cash", "cashEstimateUsd": 900, "taxesAndFeesUsd": 120 },
+  "money": { "jpyPerUsd": 148, "fxStressPct": 10, "cardFxFeePct": 0, "cashJpyPerPersonPerDay": 3000, "contingencyPct": 15 },
+  "transport": { "strategy": "point_to_point", "railClass": "ordinary", "luggageForwarding": false }
+}
