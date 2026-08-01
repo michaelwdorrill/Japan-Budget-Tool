@@ -93,7 +93,7 @@ describe('computeTransport', () => {
     const config = baseTripConfig({
       transport: { strategy: 'not_a_real_pass', railClass: 'ordinary', luggageForwarding: false },
     })
-    expect(() => computeTransport(config, testPriceData)).toThrow(/unknown JR pass/)
+    expect(() => computeTransport(config, testPriceData)).toThrow(/unknown transport strategy\/pass id/)
   })
 
   it('adds luggage forwarding across transfers when enabled', () => {
@@ -170,7 +170,7 @@ describe('computeTransport', () => {
     expect(result.totalJpy).toBe(580)
   })
 
-  it('treats "auto" the same as point_to_point (optimizer is Phase 4)', () => {
+  it('"auto" picks the cheapest option from the optimizer, not necessarily a pass', () => {
     const config = baseTripConfig({
       party: { adults: 1, children: [], rooms: 1 },
       itinerary: {
@@ -181,6 +181,22 @@ describe('computeTransport', () => {
       transport: { strategy: 'auto', railClass: 'ordinary', luggageForwarding: false },
     })
     const result = computeTransport(config, testPriceData)
-    expect(result.totalJpy).toBe(14000)
+    // A single short journey never beats a ¥50,000 pass; the fixture's discount
+    // product (¥10,000) undercuts even the plain point-to-point fare (¥14,000).
+    expect(result.totalJpy).toBe(10000)
+    expect(result.options[0].id).toBe('discount_products')
+  })
+
+  it('exposes the full ranked option list from the optimizer', () => {
+    const config = baseTripConfig({
+      itinerary: {
+        arrivalAirport: 'NRT',
+        departureAirport: 'NRT',
+        legs: [legWith({ cityId: 'tokyo' }), legWith({ cityId: 'kyoto' })],
+      },
+    })
+    const result = computeTransport(config, testPriceData)
+    expect(result.options.length).toBeGreaterThan(1)
+    expect(result.options.map((o) => o.totalJpy)).toEqual([...result.options.map((o) => o.totalJpy)].sort((a, b) => a - b))
   })
 })

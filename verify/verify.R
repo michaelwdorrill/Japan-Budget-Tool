@@ -187,33 +187,146 @@ fare_for_class <- function(record, rail_class) {
   record$fareJpyReserved
 }
 
-point_to_point_fares <- function(config, price_data) {
+# §4 transport optimizer — mirrors engine/transportOptimizer.ts exactly.
+# Only totals are reproduced here (not labels/line items/added travel time),
+# since those are the only fields diffed against the TS-emitted fixtures.
+
+build_journeys <- function(config, price_data) {
   legs <- config$itinerary$legs
   n <- length(legs)
-  if (n < 2) return(0)
-
   fare_eq <- fare_equivalent_people(config$party)
-  total <- 0
-  for (i in 1:(n - 1)) {
-    from_city <- legs[[i]]$cityId
-    to_city <- legs[[i + 1]]$cityId
-    if (identical(from_city, to_city)) next
-    record <- find_rail_fare(price_data$railFares, from_city, to_city)
-    fare <- fare_for_class(record, config$transport$railClass)
-    total <- total + multiply_by_basis("per_person_per_leg", fare, fare_equiv_people = fare_eq, legs = 1)
+  journeys <- list()
+  cumulative_nights <- 0
+
+  if (n >= 2) {
+    for (i in 1:(n - 1)) {
+      cumulative_nights <- cumulative_nights + legs[[i]]$nights
+      from_city <- legs[[i]]$cityId
+      to_city <- legs[[i + 1]]$cityId
+      if (identical(from_city, to_city)) next
+      record <- find_rail_fare(price_data$railFares, from_city, to_city)
+      unit_fare <- fare_for_class(record, config$transport$railClass)
+      fare_jpy <- multiply_by_basis("per_person_per_leg", unit_fare, fare_equiv_people = fare_eq, legs = 1)
+      journeys[[length(journeys) + 1]] <- list(
+        fromCityId = from_city, toCityId = to_city, dayOffset = cumulative_nights,
+        record = record, fareJpy = fare_jpy
+      )
+    }
   }
-  total
+  journeys
 }
 
-national_pass_fares <- function(config, price_data, pass_id) {
-  pass <- find_price(price_data$passes$nationalPasses, function(p) identical(p$id, pass_id), paste("JR pass", pass_id))
+# Best `days`-long consecutive window (candidate starts = each eligible
+# journey's own day) among `eligible_journeys`. Returns the list of captured
+# journeys (by reference/position within eligible_journeys).
+best_window_capture <- function(days, eligible_journeys) {
+  if (length(eligible_journeys) == 0) return(list())
+  starts <- unique(vapply(eligible_journeys, function(j) j$dayOffset, numeric(1)))
+  best_value <- -1
+  best_indices <- integer(0)
+  for (start in starts) {
+    end <- start + days - 1
+    indices <- integer(0)
+    value <- 0
+    for (idx in seq_along(eligible_journeys)) {
+      j <- eligible_journeys[[idx]]
+      if (j$dayOffset >= start && j$dayOffset <= end) {
+        indices <- c(indices, idx)
+        value <- value + j$fareJpy
+      }
+    }
+    if (value > best_value) {
+      best_value <- value
+      best_indices <- indices
+    }
+  }
+  eligible_journeys[best_indices]
+}
+
+pass_price_jpy <- function(config, price_jpy, child_discount_pct) {
   children <- config$party$children
   full_fare_children <- count_children(children, function(c) c$age >= 12)
   half_fare_children <- count_children(children, function(c) c$age >= 6 && c$age <= 11)
   full_fare_count <- config$party$adults + full_fare_children
+  full_fare_count * price_jpy + half_fare_children * round_half_up(price_jpy * (child_discount_pct / 100))
+}
 
-  full_fare_count * pass$priceJpyOfficialChannel +
-    half_fare_children * round_half_up(pass$priceJpyOfficialChannel * (pass$childDiscountPct / 100))
+journey_key <- function(j) paste(j$fromCityId, j$toCityId, j$dayOffset, j$record$id)
+
+evaluate_pass_option <- function(config, journeys, eligible_journeys, pass_id, days, price_jpy, child_discount_pct) {
+  captured <- best_window_capture(days, eligible_journeys)
+  captured_keys <- vapply(captured, journey_key, character(1))
+  pass_cost <- pass_price_jpy(config, price_jpy, child_discount_pct)
+
+  paid_fare_jpy <- 0
+  if (length(journeys) > 0) {
+    for (j in journeys) {
+      if (!(journey_key(j) %in% captured_keys)) paid_fare_jpy <- paid_fare_jpy + j$fareJpy
+    }
+  }
+
+  list(id = pass_id, totalJpy = pass_cost + paid_fare_jpy)
+}
+
+evaluate_discount_products_option <- function(config, price_data, journeys) {
+  fare_eq <- fare_equivalent_people(config$party)
+  total <- 0
+  substitutions <- 0
+
+  if (length(journeys) > 0) {
+    for (j in journeys) {
+      route_id <- paste0(j$fromCityId, "-", j$toCityId)
+      reverse_route_id <- paste0(j$toCityId, "-", j$fromCityId)
+      product <- NULL
+      for (p in price_data$passes$discountProducts) {
+        if (!is.null(p$route) && (identical(p$route, route_id) || identical(p$route, reverse_route_id))) {
+          product <- p
+          break
+        }
+      }
+      if (!is.null(product)) {
+        substitutions <- substitutions + 1
+        total <- total + multiply_by_basis("per_person_per_leg", product$priceJpy, fare_equiv_people = fare_eq, legs = 1)
+      } else {
+        total <- total + j$fareJpy
+      }
+    }
+  }
+
+  if (substitutions == 0) return(NULL)
+  list(id = "discount_products", totalJpy = total)
+}
+
+optimize_transport <- function(config, price_data) {
+  journeys <- build_journeys(config, price_data)
+
+  point_to_point_total <- if (length(journeys) == 0) 0 else sum(vapply(journeys, function(j) j$fareJpy, numeric(1)))
+  options <- list(list(id = "point_to_point", totalJpy = point_to_point_total))
+
+  if (length(journeys) > 0) {
+    for (pass in price_data$passes$nationalPasses) {
+      if (!identical(pass$railClass, config$transport$railClass)) next
+      options[[length(options) + 1]] <- evaluate_pass_option(config, journeys, journeys, pass$id, pass$days, pass$priceJpyOfficialChannel, pass$childDiscountPct)
+    }
+
+    for (pass in price_data$passes$regionalPasses) {
+      eligible <- Filter(function(j) (j$fromCityId %in% pass$coverage) && (j$toCityId %in% pass$coverage), journeys)
+      if (length(eligible) == 0) next
+      options[[length(options) + 1]] <- evaluate_pass_option(config, journeys, eligible, pass$id, pass$days, pass$priceJpy, pass$childDiscountPct)
+    }
+
+    discount_option <- evaluate_discount_products_option(config, price_data, journeys)
+    if (!is.null(discount_option)) options[[length(options) + 1]] <- discount_option
+  }
+
+  totals <- vapply(options, function(o) o$totalJpy, numeric(1))
+  options[order(totals)]
+}
+
+find_transport_option <- function(config, price_data, option_id) {
+  options <- optimize_transport(config, price_data)
+  for (o in options) if (identical(o$id, option_id)) return(o)
+  stop(paste("unknown transport strategy/pass id", option_id))
 }
 
 luggage_forwarding_total <- function(config, price_data) {
@@ -229,12 +342,16 @@ luggage_forwarding_total <- function(config, price_data) {
 
 compute_transport <- function(config, price_data) {
   strategy <- config$transport$strategy
-  is_explicit_pass <- !(strategy %in% c("auto", "point_to_point"))
-  fare_total <- if (is_explicit_pass) {
-    national_pass_fares(config, price_data, strategy)
+  options <- optimize_transport(config, price_data)
+
+  fare_total <- if (identical(strategy, "point_to_point")) {
+    find_transport_option(config, price_data, "point_to_point")$totalJpy
+  } else if (identical(strategy, "auto")) {
+    options[[1]]$totalJpy
   } else {
-    point_to_point_fares(config, price_data)
+    find_transport_option(config, price_data, strategy)$totalJpy
   }
+
   fare_total + luggage_forwarding_total(config, price_data)
 }
 
