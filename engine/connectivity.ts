@@ -1,6 +1,6 @@
 import type { TripConfig } from './trip'
 import type { PriceData } from './priceData'
-import { multiplyByBasis, totalPeople } from './basis'
+import { multiplyByBasisRange, totalPeople } from './basis'
 import { findPriceById } from './priceLookup'
 import type { LineItem } from './lineItem'
 import { sumLineItems } from './lineItem'
@@ -28,7 +28,7 @@ export function computeConnectivity(config: TripConfig, priceData: PriceData): {
     label: esim.label,
     category: 'connectivity',
     subcategory: 'G1',
-    amountJpy: multiplyByBasis(esim.basis, esim.expected, { people }),
+    ...multiplyByBasisRange(esim.basis, esim, { people }),
     confidence: esim.confidence,
   })
 
@@ -38,7 +38,7 @@ export function computeConnectivity(config: TripConfig, priceData: PriceData): {
     label: coinLockers.label,
     category: 'connectivity',
     subcategory: 'G2',
-    amountJpy: multiplyByBasis(coinLockers.basis, coinLockers.expected, { people }),
+    ...multiplyByBasisRange(coinLockers.basis, coinLockers, { people }),
     confidence: coinLockers.confidence,
   })
 
@@ -49,7 +49,7 @@ export function computeConnectivity(config: TripConfig, priceData: PriceData): {
       label: laundry.label,
       category: 'connectivity',
       subcategory: 'G2',
-      amountJpy: multiplyByBasis(laundry.basis, laundry.expected, { people }),
+      ...multiplyByBasisRange(laundry.basis, laundry, { people }),
       confidence: laundry.confidence,
     })
   }

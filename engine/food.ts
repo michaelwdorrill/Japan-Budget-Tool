@@ -1,6 +1,6 @@
 import type { FoodTier, Leg, TripConfig } from './trip'
 import type { PriceData } from './priceData'
-import { multiplyByBasis, totalPeople } from './basis'
+import { multiplyByBasisRange, totalPeople } from './basis'
 import { findPrice, findPriceById } from './priceLookup'
 import type { LineItem } from './lineItem'
 import { sumLineItems } from './lineItem'
@@ -13,14 +13,13 @@ function mealCost(slot: MealSlot, tier: FoodTier, people: number, nights: number
     (p) => p.category === 'food' && p.id === `food_${slot}_${tier}`,
     `food ${slot} tier "${tier}"`,
   )
-  const amountJpy = multiplyByBasis(record.basis, record.expected, { people, days: nights })
   const subcategory = slot === 'breakfast' ? 'E1' : slot === 'lunch' ? 'E2' : 'E3'
   return {
     id: `food-${slot}-${record.id}`,
     label: record.label,
     category: 'food',
     subcategory,
-    amountJpy,
+    ...multiplyByBasisRange(record.basis, record, { people, days: nights }),
     confidence: record.confidence,
   }
 }
@@ -48,7 +47,7 @@ export function legFoodCost(leg: Leg, people: number, priceData: PriceData): Lin
       category: 'food',
       subcategory: 'E4',
       cityId: leg.cityId,
-      amountJpy: multiplyByBasis(record.basis, record.expected, { people, uses: leg.splurgeMeals }),
+      ...multiplyByBasisRange(record.basis, record, { people, uses: leg.splurgeMeals }),
       confidence: record.confidence,
     })
   }
@@ -77,7 +76,7 @@ export function computeFood(config: TripConfig, priceData: PriceData): FoodResul
     label: drinksRecord.label,
     category: 'food',
     subcategory: 'E5',
-    amountJpy: multiplyByBasis(drinksRecord.basis, drinksRecord.expected, { people, days: totalNights }),
+    ...multiplyByBasisRange(drinksRecord.basis, drinksRecord, { people, days: totalNights }),
     confidence: drinksRecord.confidence,
   })
 

@@ -1,6 +1,6 @@
 import type { Leg, TripConfig } from './trip'
 import type { PriceData } from './priceData'
-import { multiplyByBasis, totalPeople } from './basis'
+import { multiplyByBasisRange, totalPeople } from './basis'
 import { lodgingTax } from './tax'
 import { findPrice } from './priceLookup'
 import type { LineItem } from './lineItem'
@@ -9,6 +9,10 @@ import { sumLineItems } from './lineItem'
 export interface LegLodgingResult {
   lineItems: LineItem[]
   bracketEdgeWarning: ReturnType<typeof lodgingTax>['bracketEdgeWarning']
+}
+
+function nightlyRatePerPerson(roomCostJpy: number, nights: number, people: number): number {
+  return nights > 0 && people > 0 ? Math.round(roomCostJpy / (nights * people)) : 0
 }
 
 // B1 (room/bed cost) + B2 (municipal accommodation tax). B3 (a distinct
@@ -29,15 +33,36 @@ export function legLodgingCost(
     `lodging tier "${leg.lodgingTier}" in city "${leg.cityId}"`,
   )
 
-  const roomCostJpy = multiplyByBasis(record.basis, record.expected, {
+  const roomRange = multiplyByBasisRange(record.basis, record, { people, rooms: party.rooms, nights: leg.nights })
+
+  // The tax bracket a rate falls into can differ at the low/expected/high
+  // room cost (this is exactly the bracket-cliff risk §3.2 warns about), so
+  // each bound is computed by re-running lodgingTax at that bound's own
+  // nightly rate rather than scaling a single expected-rate tax figure.
+  const taxAtExpected = lodgingTax(
+    priceData.taxes,
+    leg.cityId,
+    nightlyRatePerPerson(roomRange.amountJpy, leg.nights, people),
+    leg.nights,
     people,
-    rooms: party.rooms,
-    nights: leg.nights,
-  })
-
-  const nightlyRatePerPersonJpy = leg.nights > 0 && people > 0 ? Math.round(roomCostJpy / (leg.nights * people)) : 0
-
-  const tax = lodgingTax(priceData.taxes, leg.cityId, nightlyRatePerPersonJpy, leg.nights, people, referenceDate)
+    referenceDate,
+  )
+  const taxLowJpy = lodgingTax(
+    priceData.taxes,
+    leg.cityId,
+    nightlyRatePerPerson(roomRange.lowJpy, leg.nights, people),
+    leg.nights,
+    people,
+    referenceDate,
+  ).totalTaxJpy
+  const taxHighJpy = lodgingTax(
+    priceData.taxes,
+    leg.cityId,
+    nightlyRatePerPerson(roomRange.highJpy, leg.nights, people),
+    leg.nights,
+    people,
+    referenceDate,
+  ).totalTaxJpy
 
   const lineItems: LineItem[] = [
     {
@@ -46,24 +71,26 @@ export function legLodgingCost(
       category: 'lodging',
       subcategory: 'B1',
       cityId: leg.cityId,
-      amountJpy: roomCostJpy,
+      ...roomRange,
       confidence: record.confidence,
     },
   ]
 
-  if (tax.totalTaxJpy > 0) {
+  if (taxAtExpected.totalTaxJpy > 0 || taxLowJpy > 0 || taxHighJpy > 0) {
     lineItems.push({
       id: `lodging-tax-${leg.cityId}`,
       label: `Municipal accommodation tax, ${leg.cityId}`,
       category: 'lodging',
       subcategory: 'B2',
       cityId: leg.cityId,
-      amountJpy: tax.totalTaxJpy,
+      lowJpy: Math.min(taxLowJpy, taxHighJpy),
+      amountJpy: taxAtExpected.totalTaxJpy,
+      highJpy: Math.max(taxLowJpy, taxHighJpy),
       confidence: 'medium',
     })
   }
 
-  return { lineItems, bracketEdgeWarning: tax.bracketEdgeWarning }
+  return { lineItems, bracketEdgeWarning: taxAtExpected.bracketEdgeWarning }
 }
 
 export interface LodgingResult {

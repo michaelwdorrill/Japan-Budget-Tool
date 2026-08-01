@@ -1,9 +1,9 @@
 import type { TripConfig } from './trip'
 import type { PriceData } from './priceData'
-import { multiplyByBasis, totalPeople } from './basis'
+import { multiplyByBasisRange, totalPeople } from './basis'
 import { findPriceById } from './priceLookup'
 import type { LineItem } from './lineItem'
-import { sumLineItems } from './lineItem'
+import { exactAmount, sumLineItems } from './lineItem'
 
 // H1: omiyage budget, always included. H2: personal shopping budget,
 // user-set via TripConfig.shopping.personalBudgetJpy; defaults to 0 per §7.
@@ -17,7 +17,7 @@ export function computeShopping(config: TripConfig, priceData: PriceData): { lin
     label: omiyage.label,
     category: 'shopping',
     subcategory: 'H1',
-    amountJpy: multiplyByBasis(omiyage.basis, omiyage.expected, { people }),
+    ...multiplyByBasisRange(omiyage.basis, omiyage, { people }),
     confidence: omiyage.confidence,
   })
 
@@ -28,7 +28,8 @@ export function computeShopping(config: TripConfig, priceData: PriceData): { lin
       label: 'Personal shopping budget',
       category: 'shopping',
       subcategory: 'H2',
-      amountJpy: personalBudgetJpy,
+      // User-set figure, not a modeled estimate.
+      ...exactAmount(personalBudgetJpy),
       confidence: 'high',
     })
   }

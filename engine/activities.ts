@@ -1,6 +1,6 @@
 import type { Leg, TripConfig } from './trip'
 import type { PriceData } from './priceData'
-import { multiplyByBasis, totalPeople } from './basis'
+import { multiplyByBasisRange, totalPeople } from './basis'
 import { findPrice } from './priceLookup'
 import type { LineItem } from './lineItem'
 import { sumLineItems } from './lineItem'
@@ -20,13 +20,14 @@ export function legActivitiesCost(leg: Leg, people: number, priceData: PriceData
       (a) => a.id === selection.activityId,
       `named activity "${selection.activityId}"`,
     )
+    const range = multiplyByBasisRange(activity.basis, activity, { people, uses: selection.quantity })
     lineItems.push({
       id: `activity-${activity.id}-${leg.cityId}`,
       label: activity.label,
       category: 'activities',
       subcategory: 'F',
       cityId: leg.cityId,
-      amountJpy: multiplyByBasis(activity.basis, activity.expected, { people, uses: selection.quantity }),
+      ...range,
       confidence: activity.confidence,
     })
   }
@@ -36,13 +37,14 @@ export function legActivitiesCost(leg: Leg, people: number, priceData: PriceData
     (a) => a.tier === leg.activityTierFallback,
     `activity fallback tier "${leg.activityTierFallback}"`,
   )
+  const fallbackRange = multiplyByBasisRange(fallback.basis, fallback, { people, days: leg.nights })
   lineItems.push({
     id: `activity-fallback-${leg.cityId}`,
     label: fallback.label,
     category: 'activities',
     subcategory: 'F',
     cityId: leg.cityId,
-    amountJpy: multiplyByBasis(fallback.basis, fallback.expected, { people, days: leg.nights }),
+    ...fallbackRange,
     confidence: fallback.confidence,
   })
 

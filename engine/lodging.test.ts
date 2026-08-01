@@ -32,6 +32,48 @@ describe('computeLodging', () => {
     expect(roomLine?.amountJpy).toBe(30000)
     expect(taxLine?.amountJpy).toBe(100 * 3 * 2) // ¥600
     expect(result.totalJpy).toBe(30000 + 600)
+
+    // §0.1: every line item carries a low/expected/high band.
+    expect(roomLine?.lowJpy).toBe(8000 * 3)
+    expect(roomLine?.highJpy).toBe(15000 * 3)
+  })
+
+  it('computes the tax band by re-evaluating brackets at the low/high room rate, not scaling the expected tax', () => {
+    // Kyoto business: low ¥9,000/expected ¥12,000/high ¥16,000 per room/night, 1 room, 1 night, 1 person.
+    // Nightly rates per person: low 9000 (6,000-19,999 bracket, ¥400), expected 12000 (same bracket, ¥400),
+    // high 16000 (still 6,000-19,999 bracket, ¥400) — no bracket jump here, so confirm the band tracks the room band shape.
+    const config = baseTripConfig({
+      party: { adults: 1, children: [], rooms: 1 },
+      itinerary: {
+        arrivalAirport: 'NRT',
+        departureAirport: 'NRT',
+        legs: [legWith({ cityId: 'kyoto', nights: 1, lodgingTier: 'business' })],
+      },
+    })
+    const result = computeLodging(config, testPriceData, '2026-06-01')
+    const taxLine = result.lineItems.find((i) => i.subcategory === 'B2')
+    expect(taxLine?.lowJpy).toBe(400)
+    expect(taxLine?.amountJpy).toBe(400)
+    expect(taxLine?.highJpy).toBe(400)
+  })
+
+  it('widens the tax band across a bracket edge when the room rate band straddles it', () => {
+    // Kyoto luxury: low ¥150,000/expected ¥200,000/high ¥300,000 per room/night, 1 room, 1 night, 1 person.
+    // Nightly rates per person: low 150000 (50,000-99,999 bracket? no: 150000 is in >=100000 bracket too).
+    // Use a party of 2 so the low bound (150000/2=75000) sits in the 50,000-99,999 bracket (¥4,000) while the
+    // high bound (300000/2=150000) sits in the >=100,000 bracket (¥10,000) -- a real bracket jump.
+    const config = baseTripConfig({
+      party: { adults: 2, children: [], rooms: 1 },
+      itinerary: {
+        arrivalAirport: 'NRT',
+        departureAirport: 'NRT',
+        legs: [legWith({ cityId: 'kyoto', nights: 1, lodgingTier: 'luxury' })],
+      },
+    })
+    const result = computeLodging(config, testPriceData, '2026-06-01')
+    const taxLine = result.lineItems.find((i) => i.subcategory === 'B2')
+    expect(taxLine?.lowJpy).toBe(4000 * 2) // ¥8,000: low bound still in the 50-99,999 bracket
+    expect(taxLine?.highJpy).toBe(10000 * 2) // ¥20,000: high bound crosses into the top bracket
   })
 
   it('omits the tax line entirely when the city has no applicable tax record', () => {
