@@ -22,7 +22,10 @@ export type Category =
   | 'shopping'
   | 'reserves'
 
-// §2.3 lodging tiers, incl. the ryokan_hanmeshi special case.
+// §2.3 lodging tiers, incl. the ryokan_hanmeshi special case. mountain_hut
+// is the same shape as ryokan_hanmeshi (per-person-per-night, dinner and
+// breakfast included) for a mountain-hut stay on a multi-day climb (e.g.
+// Mt Fuji's 8th-station huts) — see MEALS_INCLUDED_TIERS in food.ts.
 export type Tier =
   | 'hostel'
   | 'business'
@@ -30,6 +33,7 @@ export type Tier =
   | 'upscale'
   | 'luxury'
   | 'ryokan_hanmeshi'
+  | 'mountain_hut'
 
 export interface PriceRecord {
   id: string

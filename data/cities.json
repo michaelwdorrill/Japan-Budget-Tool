@@ -54,5 +54,33 @@
     "region": "Chubu",
     "airports": [],
     "notes": "Reached via limited express from Nagoya; no shinkansen access."
+  },
+  {
+    "id": "kawaguchiko",
+    "name": "Kawaguchiko",
+    "region": "Chubu",
+    "airports": [],
+    "notes": "Fuji Five Lakes; base town for the Yoshida Trail. Reached from Tokyo by highway bus. Season-gated: the climb itself is only realistic July 1 - Sept 10/11 (see seasons.json)."
+  },
+  {
+    "id": "onomichi",
+    "name": "Onomichi",
+    "region": "Chugoku",
+    "airports": [],
+    "notes": "Shin-Onomichi shinkansen stop on the Sanyo line; the Honshu-side start of the Shimanami Kaido cycling route. Old port town with a well-known temple-walk trail."
+  },
+  {
+    "id": "imabari",
+    "name": "Imabari",
+    "region": "Shikoku",
+    "airports": [],
+    "notes": "The Shikoku-side end of the Shimanami Kaido cycling route from Onomichi."
+  },
+  {
+    "id": "iyavalley",
+    "name": "Iya Valley (Miyoshi)",
+    "region": "Shikoku",
+    "airports": [],
+    "notes": "Remote mountain valley in Tokushima, historically a Heike-clan refuge; known for vine bridges (kazurabashi). No shinkansen or major rail; reached by bus/limited express via Ikeda. Sparse public transit once there -- most visitors rely on lodging shuttles, taxis, or a rental car."
   }
 ]

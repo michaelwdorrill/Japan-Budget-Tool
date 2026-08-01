@@ -17,7 +17,7 @@
       },
       "tier": {
         "type": "string",
-        "enum": ["hostel", "business", "midrange", "upscale", "luxury", "ryokan_hanmeshi"]
+        "enum": ["hostel", "business", "midrange", "upscale", "luxury", "ryokan_hanmeshi", "mountain_hut"]
       },
       "basis": {
         "type": "string",

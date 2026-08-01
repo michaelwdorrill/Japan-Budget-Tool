@@ -9,6 +9,7 @@ const TIER_LABELS: Record<LodgingTier, string> = {
   upscale: '4-5 star / good ryokan',
   luxury: 'Luxury',
   ryokan_hanmeshi: 'Ryokan with dinner + breakfast',
+  mountain_hut: 'Mountain hut (dinner + breakfast)',
 }
 
 function availableTiers(cityId: string): LodgingTier[] {
@@ -75,8 +76,8 @@ export function StepSleep() {
           )
         })}
       </div>
-      {legs.some((leg) => leg.lodgingTier === 'ryokan_hanmeshi') && (
-        <p className="field-note">A ryokan-with-meals leg zeroes that leg's breakfast and dinner cost in step 4 — meals are included.</p>
+      {legs.some((leg) => leg.lodgingTier === 'ryokan_hanmeshi' || leg.lodgingTier === 'mountain_hut') && (
+        <p className="field-note">A ryokan-with-meals or mountain-hut leg zeroes that leg's breakfast and dinner cost in step 4 — meals are included.</p>
       )}
     </div>
   )

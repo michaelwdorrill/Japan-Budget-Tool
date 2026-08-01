@@ -374,7 +374,7 @@ meal_cost <- function(slot, tier, people, nights, price_data) {
 }
 
 leg_food_cost <- function(leg, people, price_data) {
-  is_ryokan <- identical(leg$lodgingTier, "ryokan_hanmeshi")
+  is_ryokan <- leg$lodgingTier %in% c("ryokan_hanmeshi", "mountain_hut")
   total <- 0
   if (!is_ryokan) total <- total + meal_cost("breakfast", leg$food$breakfast, people, leg$nights, price_data)
   total <- total + meal_cost("lunch", leg$food$lunch, people, leg$nights, price_data)

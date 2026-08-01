@@ -74,7 +74,7 @@ export function StepEat() {
       <div className="leg-list">
         {legs.map((leg, i) => {
           const city = priceData.cities.find((c) => c.id === leg.cityId)
-          const isRyokan = leg.lodgingTier === 'ryokan_hanmeshi'
+          const isRyokan = leg.lodgingTier === 'ryokan_hanmeshi' || leg.lodgingTier === 'mountain_hut'
           return (
             <div key={i} className="leg-list__row leg-list__row--wrap">
               <span className="leg-list__city">{city?.name ?? leg.cityId}</span>
