@@ -1,0 +1,187 @@
+import type { PriceData } from '../priceData'
+import type { PriceRecord } from '../price'
+
+// Small, hand-verifiable price data used across engine unit tests. Values
+// are deliberately round numbers so expected totals can be computed by hand
+// in test assertions, independent of the real (unverified) seed data in
+// /data. Kyoto's tax brackets mirror the real ones (§3.2) so the bracket
+// edge warning logic has something realistic to exercise.
+
+const prices: PriceRecord[] = [
+  { id: 'lodging_tokyo_business', label: 'Business hotel, Tokyo', cityId: 'tokyo', category: 'lodging', tier: 'business', basis: 'per_room_per_night', low: 8000, expected: 10000, high: 15000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'lodging_tokyo_ryokan_hanmeshi', label: 'Ryokan with meals, Tokyo', cityId: 'tokyo', category: 'lodging', tier: 'ryokan_hanmeshi', basis: 'per_person_per_night', low: 15000, expected: 20000, high: 30000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'lodging_kyoto_luxury', label: 'Luxury ryokan, Kyoto', cityId: 'kyoto', category: 'lodging', tier: 'luxury', basis: 'per_room_per_night', low: 150000, expected: 200000, high: 300000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'lodging_kyoto_business', label: 'Business hotel, Kyoto', cityId: 'kyoto', category: 'lodging', tier: 'business', basis: 'per_room_per_night', low: 9000, expected: 12000, high: 16000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'lodging_osaka_business', label: 'Business hotel, Osaka', cityId: 'osaka', category: 'lodging', tier: 'business', basis: 'per_room_per_night', low: 7000, expected: 9000, high: 12000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+
+  { id: 'food_breakfast_casual', label: 'Breakfast, casual', category: 'food', basis: 'per_person_per_day', low: 700, expected: 1000, high: 1500, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'food_lunch_casual', label: 'Lunch, casual', category: 'food', basis: 'per_person_per_day', low: 900, expected: 1200, high: 1800, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'food_dinner_casual', label: 'Dinner, casual', category: 'food', basis: 'per_person_per_day', low: 2000, expected: 3000, high: 4500, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'splurge_meal_kaiseki_omakase', label: 'Splurge meal', category: 'food', basis: 'per_person_per_use', low: 20000, expected: 30000, high: 50000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'food_drinks_snacks', label: 'Drinks and snacks', category: 'food', basis: 'per_person_per_day', low: 1000, expected: 1500, high: 2500, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+
+  { id: 'local_transit_tokyo', label: 'Local transit, Tokyo', cityId: 'tokyo', category: 'local_transport', basis: 'per_person_per_day', low: 700, expected: 1000, high: 1500, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'local_transit_kyoto', label: 'Local transit, Kyoto', cityId: 'kyoto', category: 'local_transport', basis: 'per_person_per_day', low: 600, expected: 900, high: 1400, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+
+  { id: 'esim_7day', label: 'eSIM 7 day', category: 'connectivity', basis: 'per_person_per_trip', low: 2000, expected: 3000, high: 4000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'esim_14day', label: 'eSIM 14 day', category: 'connectivity', basis: 'per_person_per_trip', low: 3500, expected: 5000, high: 6500, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'coin_lockers', label: 'Coin lockers', category: 'connectivity', basis: 'per_person_per_trip', low: 500, expected: 1000, high: 2000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'laundry', label: 'Laundry', category: 'connectivity', basis: 'per_person_per_trip', low: 1500, expected: 3000, high: 5000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+
+  { id: 'travel_insurance', label: 'Travel insurance', category: 'getting_there', basis: 'per_person_per_trip', low: 4000, expected: 8000, high: 15000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'home_side_transport', label: 'Home-side transport', category: 'getting_there', basis: 'per_person_per_trip', low: 2000, expected: 5000, high: 10000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+  { id: 'luggage_forwarding_per_bag_per_transfer', label: 'Luggage forwarding', category: 'intercity_transport', basis: 'per_person_per_leg', low: 2000, expected: 2250, high: 2500, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+
+  { id: 'omiyage_budget', label: 'Omiyage budget', category: 'shopping', basis: 'per_person_per_trip', low: 5000, expected: 15000, high: 30000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+]
+
+export const testPriceData: PriceData = {
+  cities: [
+    { id: 'tokyo', name: 'Tokyo', region: 'Kanto', airports: ['NRT', 'HND'] },
+    { id: 'kyoto', name: 'Kyoto', region: 'Kansai', airports: [] },
+    { id: 'osaka', name: 'Osaka', region: 'Kansai', airports: ['KIX', 'ITM'] },
+  ],
+  prices,
+  railFares: [
+    {
+      id: 'tokyo-kyoto',
+      fromCityId: 'tokyo',
+      toCityId: 'kyoto',
+      bidirectional: true,
+      mode: 'shinkansen',
+      line: 'Test Shinkansen',
+      durationMinutes: 140,
+      fareJpyUnreserved: 13000,
+      fareJpyReserved: 14000,
+      fareJpyGreenCar: 19000,
+      asOf: '2026-01-01',
+      source: 'test',
+      confidence: 'high',
+    },
+    {
+      id: 'kyoto-osaka',
+      fromCityId: 'kyoto',
+      toCityId: 'osaka',
+      bidirectional: true,
+      mode: 'local',
+      line: 'Test Local Line',
+      durationMinutes: 30,
+      fareJpyUnreserved: 580,
+      fareJpyReserved: 580,
+      asOf: '2026-01-01',
+      source: 'test',
+      confidence: 'high',
+    },
+  ],
+  passes: {
+    nationalPasses: [
+      {
+        id: 'jr_test_7day_ordinary',
+        label: 'Test JR Pass, 7 day, ordinary',
+        days: 7,
+        railClass: 'ordinary',
+        priceJpyOfficialChannel: 50000,
+        priceJpyOverseasAgent: 50000,
+        childDiscountPct: 50,
+        nozomiMizuhoSupplementJpy: 4960,
+        asOf: '2026-01-01',
+        source: 'test',
+        confidence: 'high',
+      },
+    ],
+    regionalPasses: [],
+    discountProducts: [],
+  },
+  taxes: {
+    accommodationTax: [
+      {
+        id: 'kyoto_test',
+        cityId: 'kyoto',
+        effectiveFrom: '2026-03-01',
+        effectiveTo: null,
+        structure: 'bracket_per_person_per_night',
+        brackets: [
+          { minJpy: 0, maxJpy: 5999, taxJpy: 200 },
+          { minJpy: 6000, maxJpy: 19999, taxJpy: 400 },
+          { minJpy: 20000, maxJpy: 49999, taxJpy: 1000 },
+          { minJpy: 50000, maxJpy: 99999, taxJpy: 4000 },
+          { minJpy: 100000, maxJpy: null, taxJpy: 10000 },
+        ],
+        bracketEdgeWarningThresholdPct: 10,
+        asOf: '2026-01-01',
+        source: 'test',
+        confidence: 'high',
+      },
+      {
+        id: 'tokyo_test_pre2027',
+        cityId: 'tokyo',
+        effectiveFrom: '2020-01-01',
+        effectiveTo: '2027-03-31',
+        structure: 'flat_per_person_per_night',
+        flatTaxJpy: 100,
+        asOf: '2026-01-01',
+        source: 'test',
+        confidence: 'high',
+      },
+      {
+        id: 'tokyo_test_post2027',
+        cityId: 'tokyo',
+        effectiveFrom: '2027-04-01',
+        effectiveTo: null,
+        structure: 'percentage_per_person_per_night',
+        percentageOfRate: 3,
+        asOf: '2026-01-01',
+        source: 'test',
+        confidence: 'high',
+      },
+    ],
+    departureTax: {
+      id: 'departure_tax_test',
+      amountJpy: 3000,
+      basis: 'per_person_per_trip',
+      collectedVia: 'airfare',
+      asOf: '2026-01-01',
+      source: 'test',
+      confidence: 'high',
+    },
+  },
+  activities: {
+    namedActivities: [
+      {
+        id: 'test_activity_tokyo',
+        label: 'Test named activity',
+        cityId: 'tokyo',
+        category: 'activities',
+        basis: 'per_person_per_use',
+        low: 3000,
+        expected: 4000,
+        high: 6000,
+        durationMinutes: 60,
+        asOf: '2026-01-01',
+        source: 'test',
+        confidence: 'high',
+      },
+    ],
+    activityTierFallback: [
+      { id: 'fallback_free_walking', label: 'Free/walking', tier: 'free_walking', category: 'activities', basis: 'per_person_per_day', low: 0, expected: 300, high: 1000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+      { id: 'fallback_light', label: 'Light', tier: 'light', category: 'activities', basis: 'per_person_per_day', low: 500, expected: 1500, high: 3000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+      { id: 'fallback_standard', label: 'Standard', tier: 'standard', category: 'activities', basis: 'per_person_per_day', low: 2000, expected: 3500, high: 6000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+      { id: 'fallback_premium', label: 'Premium', tier: 'premium', category: 'activities', basis: 'per_person_per_day', low: 5000, expected: 9000, high: 15000, asOf: '2026-01-01', source: 'test', confidence: 'high' },
+    ],
+  },
+  seasons: [
+    {
+      id: 'test_season',
+      label: 'Test season',
+      startMonthDay: '03-20',
+      endMonthDay: '04-10',
+      severity: 'peak',
+      lodgingMultiplierLow: 1.4,
+      lodgingMultiplierHigh: 2.2,
+      advice: 'Test advice',
+      asOf: '2026-01-01',
+      source: 'test',
+      confidence: 'high',
+    },
+  ],
+}
