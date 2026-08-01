@@ -149,13 +149,55 @@ compute_getting_there <- function(config, price_data) {
   total
 }
 
-compute_leg_lodging <- function(leg, party, price_data, reference_date) {
+# §5.1: seasonal lodging multiplier date math, mirroring engine/dateUtils.ts.
+add_days_iso <- function(iso_date, days) {
+  format(as.Date(iso_date) + days, "%Y-%m-%d")
+}
+
+leg_start_dates <- function(reference_date, legs) {
+  starts <- character(0)
+  cumulative_nights <- 0
+  for (leg in legs) {
+    starts <- c(starts, add_days_iso(reference_date, cumulative_nights))
+    cumulative_nights <- cumulative_nights + leg$nights
+  }
+  starts
+}
+
+month_day_of <- function(iso_date) substr(iso_date, 6, 10)
+
+is_month_day_in_window <- function(month_day, start_month_day, end_month_day) {
+  if (start_month_day <= end_month_day) {
+    return(month_day >= start_month_day && month_day <= end_month_day)
+  }
+  month_day >= start_month_day || month_day <= end_month_day
+}
+
+find_overlapping_season <- function(leg_start_date, nights, seasons) {
+  nights_to_check <- max(nights, 1)
+  for (i in 0:(nights_to_check - 1)) {
+    month_day <- month_day_of(add_days_iso(leg_start_date, i))
+    for (s in seasons) {
+      if (is_month_day_in_window(month_day, s$startMonthDay, s$endMonthDay)) return(s)
+    }
+  }
+  NULL
+}
+
+compute_leg_lodging <- function(leg, party, price_data, reference_date, leg_start_date) {
   people <- total_people(party)
   record <- find_price(price_data$prices, function(p) {
     identical(p$category, "lodging") && identical(p$cityId, leg$cityId) && identical(p$tier, leg$lodgingTier)
   }, paste("lodging", leg$lodgingTier, leg$cityId))
 
   room_cost <- multiply_by_basis(record$basis, record$expected, people = people, rooms = party$rooms, nights = leg$nights)
+
+  season <- find_overlapping_season(leg_start_date, leg$nights, price_data$seasons)
+  if (!is.null(season)) {
+    mid_multiplier <- (season$lodgingMultiplierLow + season$lodgingMultiplierHigh) / 2
+    room_cost <- round_half_up(room_cost * mid_multiplier)
+  }
+
   nightly_rate <- if (leg$nights > 0 && people > 0) round_half_up(room_cost / (leg$nights * people)) else 0
   tax <- lodging_tax_total(price_data$taxes, leg$cityId, nightly_rate, leg$nights, people, reference_date)
 
@@ -165,8 +207,10 @@ compute_leg_lodging <- function(leg, party, price_data, reference_date) {
 compute_lodging <- function(config, price_data, reference_date) {
   room_total <- 0
   tax_total <- 0
-  for (leg in config$itinerary$legs) {
-    r <- compute_leg_lodging(leg, config$party, price_data, reference_date)
+  starts <- leg_start_dates(reference_date, config$itinerary$legs)
+  legs <- config$itinerary$legs
+  for (i in seq_along(legs)) {
+    r <- compute_leg_lodging(legs[[i]], config$party, price_data, reference_date, starts[i])
     room_total <- room_total + r$room
     tax_total <- tax_total + r$tax
   }

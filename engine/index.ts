@@ -15,6 +15,8 @@ export { runMonteCarlo, computeAdditiveEnvelope } from './monteCarlo'
 export type { MonteCarloResult, Percentiles, AdditiveEnvelopeResult } from './monteCarlo'
 export { computeSensitivity } from './sensitivity'
 export type { SensitivityFactor } from './sensitivity'
+export { computeGuidance } from './guidance'
+export type { GuidanceMessage, GuidanceCategory, GuidanceOptions } from './guidance'
 
 // loadPriceData is deliberately NOT re-exported here: it does `node:fs` I/O
 // and this barrel is imported by browser code (src/). Node-only consumers

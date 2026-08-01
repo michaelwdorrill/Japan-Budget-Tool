@@ -9,8 +9,9 @@ import { sumLineItems } from './lineItem'
 type MealSlot = 'breakfast' | 'lunch' | 'dinner'
 
 // Lodging tiers whose rate already includes dinner and breakfast (§2.3):
-// a ryokan-with-meals, or a mountain hut on a multi-day climb.
-const MEALS_INCLUDED_TIERS: Tier[] = ['ryokan_hanmeshi', 'mountain_hut']
+// a ryokan-with-meals, or a mountain hut on a multi-day climb. Exported for
+// the guidance engine's ryokan-meals-confirmation rule (§5.2).
+export const MEALS_INCLUDED_TIERS: Tier[] = ['ryokan_hanmeshi', 'mountain_hut']
 
 function mealCost(slot: MealSlot, tier: FoodTier, people: number, nights: number, priceData: PriceData): LineItem {
   const record = findPrice(

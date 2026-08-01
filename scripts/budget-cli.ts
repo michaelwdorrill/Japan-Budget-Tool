@@ -2,7 +2,7 @@
 import path from 'node:path'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { computeBudget } from '../engine/index'
+import { computeBudget, computeGuidance } from '../engine/index'
 import { loadPriceData } from '../engine/loadPriceData'
 import type { TripConfig } from '../engine/trip'
 import type { Category } from '../engine/price'
@@ -96,6 +96,15 @@ function main() {
       const timeTag = option.addedTravelTimeMinutes > 0 ? `, +${option.addedTravelTimeMinutes}min` : ''
       console.log(`  ${option.label.padEnd(40)} ${formatJpy(option.totalJpy).padStart(12)}  (${savingsTag} vs point-to-point${timeTag})`)
       console.log(`    ${option.why}`)
+    }
+  }
+
+  const guidance = computeGuidance(config, priceData, result)
+  if (guidance.length > 0) {
+    console.log(`\nGuidance (§5.2):`)
+    for (const note of guidance) {
+      const marker = note.severity === 'warning' ? '⚠' : '·'
+      console.log(`  ${marker} ${note.message}`)
     }
   }
 }

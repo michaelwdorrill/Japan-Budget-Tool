@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { WIZARD_STEPS } from './steps'
 import { RunningTotal } from '../components/RunningTotal'
 import { ShareLink } from '../components/ShareLink'
+import { GuidancePanel } from '../components/GuidancePanel'
 
 export function Wizard() {
   const [stepIndex, setStepIndex] = useState(0)
@@ -13,6 +14,7 @@ export function Wizard() {
       <aside className="wizard__sidebar">
         <RunningTotal />
         <ShareLink />
+        <GuidancePanel />
       </aside>
 
       <div className="wizard__main">
