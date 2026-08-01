@@ -86,6 +86,8 @@
   { "id": "travel_insurance", "label": "Travel insurance", "category": "getting_there", "basis": "per_person_per_trip", "low": 4000, "expected": 8000, "high": 15000, "asOf": "2026-07-31", "source": "https://www.iatravelinsurance.com", "confidence": "low" },
   { "id": "home_side_transport", "label": "Home-side transport to/from home airport, parking", "category": "getting_there", "basis": "per_person_per_trip", "low": 2000, "expected": 5000, "high": 10000, "asOf": "2026-07-31", "source": "internal estimate", "confidence": "low" },
 
+  { "id": "luggage_forwarding_per_bag_per_transfer", "label": "Luggage forwarding (takkyubin), per bag per city transfer", "category": "intercity_transport", "basis": "per_person_per_leg", "low": 2000, "expected": 2250, "high": 2500, "asOf": "2026-07-31", "source": "https://www.kuronekoyamato.co.jp", "confidence": "low", "notes": "§4.3: recommended when the itinerary has ≥3 city changes, or a shinkansen leg carries oversized luggage. Modeled here as one bag per person per transfer." },
+
   { "id": "omiyage_budget", "label": "Souvenirs / omiyage budget", "category": "shopping", "basis": "per_person_per_trip", "low": 5000, "expected": 15000, "high": 30000, "asOf": "2026-07-31", "source": "internal estimate", "confidence": "low" },
   { "id": "personal_shopping_budget", "label": "Personal shopping budget (user-set; default 0)", "category": "shopping", "basis": "per_person_per_trip", "low": 0, "expected": 0, "high": 50000, "asOf": "2026-07-31", "source": "internal estimate", "confidence": "low", "notes": "Default 0 per §7 (H2); UI should nudge the user to set this explicitly rather than silently assuming zero spend." }
 ]

@@ -57,6 +57,12 @@ export interface TripConfig {
     luggageForwarding: boolean
   }
 
+  // §3.1 H2 — not enumerated in §2.2's TripConfig, added here so the
+  // "default 0 with a nudge" personal shopping line has an input to read.
+  shopping?: {
+    personalBudgetJpy?: number
+  }
+
   preset?: 'lean' | 'comfortable' | 'splurge' // seeds all tiers at once
 }
 

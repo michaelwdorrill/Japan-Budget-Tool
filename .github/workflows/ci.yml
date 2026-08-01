@@ -18,5 +18,5 @@ jobs:
       - run: npm run lint
       - run: npx tsc -b
       - run: npm run validate:data
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build

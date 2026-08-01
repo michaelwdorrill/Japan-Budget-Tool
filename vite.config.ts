@@ -9,5 +9,13 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/setupTests.ts',
+    coverage: {
+      provider: 'v8',
+      include: ['engine/**/*.ts'],
+      exclude: ['engine/**/*.test.ts', 'engine/testFixtures/**'],
+      thresholds: {
+        branches: 90,
+      },
+    },
   },
 })
