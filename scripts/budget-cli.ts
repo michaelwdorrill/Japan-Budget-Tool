@@ -2,7 +2,8 @@
 import path from 'node:path'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { computeBudget, loadPriceData } from '../engine/index'
+import { computeBudget } from '../engine/index'
+import { loadPriceData } from '../engine/loadPriceData'
 import type { TripConfig } from '../engine/trip'
 import type { Category } from '../engine/price'
 

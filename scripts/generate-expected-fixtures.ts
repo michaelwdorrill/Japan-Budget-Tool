@@ -7,7 +7,8 @@
 import path from 'node:path'
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { computeBudget, loadPriceData } from '../engine/index'
+import { computeBudget } from '../engine/index'
+import { loadPriceData } from '../engine/loadPriceData'
 import type { TripConfig } from '../engine/trip'
 
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
