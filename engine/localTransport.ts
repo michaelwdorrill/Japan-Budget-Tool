@@ -1,6 +1,6 @@
 import type { TripConfig } from './trip'
 import type { PriceData } from './priceData'
-import { multiplyByBasis, totalPeople } from './basis'
+import { multiplyByBasisRange, totalPeople } from './basis'
 import { findPrice } from './priceLookup'
 import type { LineItem } from './lineItem'
 import { sumLineItems } from './lineItem'
@@ -25,7 +25,7 @@ export function computeLocalTransport(config: TripConfig, priceData: PriceData):
       category: 'local_transport',
       subcategory: 'D1',
       cityId: leg.cityId,
-      amountJpy: multiplyByBasis(record.basis, record.expected, { people, days: leg.nights }),
+      ...multiplyByBasisRange(record.basis, record, { people, days: leg.nights }),
       confidence: record.confidence,
     })
   }

@@ -1,6 +1,6 @@
 import type { TripConfig } from './trip'
 import type { PriceData } from './priceData'
-import { multiplyByBasis, totalPeople } from './basis'
+import { multiplyByBasisRange, totalPeople } from './basis'
 import { findPriceById } from './priceLookup'
 import type { LineItem } from './lineItem'
 import { sumLineItems } from './lineItem'
@@ -24,7 +24,7 @@ function luggageForwarding(config: TripConfig, priceData: PriceData): LineItem[]
       label: record.label,
       category: 'intercity_transport',
       subcategory: 'C6',
-      amountJpy: multiplyByBasis(record.basis, record.expected, { fareEquivalentPeople: people, legs: transfers }),
+      ...multiplyByBasisRange(record.basis, record, { fareEquivalentPeople: people, legs: transfers }),
       confidence: record.confidence,
     },
   ]

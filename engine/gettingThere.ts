@@ -1,11 +1,11 @@
 import type { TripConfig } from './trip'
 import type { PriceData } from './priceData'
-import { multiplyByBasis, totalPeople } from './basis'
+import { multiplyByBasisRange, totalPeople } from './basis'
 import { findPriceById } from './priceLookup'
 import { departureTax } from './tax'
 import { usdToJpy } from './money'
 import type { LineItem } from './lineItem'
-import { sumLineItems } from './lineItem'
+import { exactAmount, sumLineItems } from './lineItem'
 
 export interface GettingThereResult {
   lineItems: LineItem[]
@@ -30,7 +30,8 @@ export function computeGettingThere(config: TripConfig, priceData: PriceData): G
       label: 'International airfare (cash)',
       category: 'getting_there',
       subcategory: 'A1',
-      amountJpy: usdToJpy(config.flight.cashEstimateUsd, config.money.jpyPerUsd) * people,
+      // User-entered estimate, no low/high band of its own.
+      ...exactAmount(usdToJpy(config.flight.cashEstimateUsd, config.money.jpyPerUsd) * people),
       confidence: 'medium',
     })
   }
@@ -40,7 +41,7 @@ export function computeGettingThere(config: TripConfig, priceData: PriceData): G
     label: 'Award/ticket taxes, fees, carrier surcharges',
     category: 'getting_there',
     subcategory: 'A2',
-    amountJpy: usdToJpy(config.flight.taxesAndFeesUsd, config.money.jpyPerUsd) * people,
+    ...exactAmount(usdToJpy(config.flight.taxesAndFeesUsd, config.money.jpyPerUsd) * people),
     confidence: 'medium',
   })
 
@@ -53,7 +54,8 @@ export function computeGettingThere(config: TripConfig, priceData: PriceData): G
         : 'Japan international tourist departure tax',
       category: 'getting_there',
       subcategory: 'A3',
-      amountJpy: departureTaxJpy,
+      // A published government fee — exact, not a modeled estimate.
+      ...exactAmount(departureTaxJpy),
       confidence: priceData.taxes.departureTax.confidence,
     })
   }
@@ -64,7 +66,7 @@ export function computeGettingThere(config: TripConfig, priceData: PriceData): G
     label: homeSideTransport.label,
     category: 'getting_there',
     subcategory: 'A4',
-    amountJpy: multiplyByBasis(homeSideTransport.basis, homeSideTransport.expected, { people }),
+    ...multiplyByBasisRange(homeSideTransport.basis, homeSideTransport, { people }),
     confidence: homeSideTransport.confidence,
   })
 
@@ -74,7 +76,7 @@ export function computeGettingThere(config: TripConfig, priceData: PriceData): G
     label: insurance.label,
     category: 'getting_there',
     subcategory: 'A5',
-    amountJpy: multiplyByBasis(insurance.basis, insurance.expected, { people }),
+    ...multiplyByBasisRange(insurance.basis, insurance, { people }),
     confidence: insurance.confidence,
   })
 

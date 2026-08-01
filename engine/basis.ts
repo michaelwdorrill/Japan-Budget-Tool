@@ -43,6 +43,28 @@ export function multiplyByBasis(basis: CostBasis, unitPriceJpy: number, quantiti
   }
 }
 
+export interface BasisRangeInput {
+  low: number
+  expected: number
+  high: number
+}
+
+export interface BasisRange {
+  lowJpy: number
+  amountJpy: number
+  highJpy: number
+}
+
+// §0.1: every price record carries low/expected/high; this computes all
+// three through the same basis multiplication so every LineItem does too.
+export function multiplyByBasisRange(basis: CostBasis, unitPrice: BasisRangeInput, quantities: BasisQuantities): BasisRange {
+  return {
+    lowJpy: multiplyByBasis(basis, unitPrice.low, quantities),
+    amountJpy: multiplyByBasis(basis, unitPrice.expected, quantities),
+    highJpy: multiplyByBasis(basis, unitPrice.high, quantities),
+  }
+}
+
 // Party-size helpers shared by every category module.
 
 export function totalPeople(party: TripConfig['party']): number {

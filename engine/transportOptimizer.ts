@@ -3,7 +3,7 @@ import type { NationalPassRecord, PriceData, RailFareRecord, RegionalPassRecord 
 import type { CityId } from './ids'
 import { fareEquivalentPeople, multiplyByBasis } from './basis'
 import type { LineItem } from './lineItem'
-import { sumLineItems } from './lineItem'
+import { exactAmount, sumLineItems } from './lineItem'
 
 // §4: the transport optimizer. Point-to-point fares are always the
 // no-bulk-purchase baseline; national and regional passes are evaluated by
@@ -82,7 +82,8 @@ function journeyLineItem(journey: Journey, index: number, subcategory: string): 
     label: `${journey.record.line}, ${journey.fromCityId} -> ${journey.toCityId}`,
     category: 'intercity_transport',
     subcategory,
-    amountJpy: journey.fareJpy,
+    // Published rail fares have no low/high band in rail-fares.json — exact.
+    ...exactAmount(journey.fareJpy),
     confidence: journey.record.confidence,
   }
 }
@@ -169,7 +170,8 @@ function evaluatePassOption(
       label,
       category: 'intercity_transport',
       subcategory: 'C1',
-      amountJpy: pass,
+      // Pass prices have no low/high band in passes.json — exact.
+      ...exactAmount(pass),
       confidence,
     },
   ]
@@ -259,7 +261,8 @@ function evaluateDiscountProductsOption(config: TripConfig, priceData: PriceData
         label: product.label,
         category: 'intercity_transport',
         subcategory: 'C1',
-        amountJpy,
+        // Discount product prices have no low/high band in passes.json — exact.
+        ...exactAmount(amountJpy),
         confidence: product.confidence,
         notes: product.notes,
       })

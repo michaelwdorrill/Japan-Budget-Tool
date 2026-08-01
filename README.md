@@ -4,10 +4,9 @@ A static, client-side SPA that turns qualitative trip choices into a
 per-person budget for a trip to Japan, with an honest uncertainty range.
 See `japantripbudgetspec.md` for the full build spec.
 
-Status: Phase 5 (UI wizard) — a working 7-step wizard over the
-deterministic engine, with the full trip state serialized into a
-shareable URL. Uncertainty (Monte Carlo/P80) and the guidance rules
-engine are still to come.
+Status: Phase 6 (uncertainty and sensitivity) — the wizard's headline
+number is now the Monte Carlo P80, not a single point estimate. The
+guidance rules engine is still to come.
 
 ## Stack
 
@@ -60,3 +59,28 @@ total in the sidebar. The entire trip is encoded into the URL's `t` query
 param (compressed with `lz-string`) — that's the persistence mechanism,
 no accounts or localStorage. Copy the address bar to share or restore a
 trip in a fresh browser.
+
+## Uncertainty (§3.3)
+
+Every line item carries a low/expected/high band (`engine/*.ts`, via
+`multiplyByBasisRange`); rail fares and pass prices — real published,
+exact prices — are modeled as a point mass rather than a fabricated
+range. Two roll-up modes:
+
+- **Monte Carlo** (default, `engine/monteCarlo.ts`): 10,000 seeded PERT
+  trials. All lodging line items share one multiplicative market factor
+  per trial (`Normal(1.0, 0.08)`), and all food line items share a second,
+  independent one — so a bad week for Tokyo hotels is a bad week for
+  Kyoto hotels too, rather than 40 independent draws collapsing the range
+  toward the mean. FX is drawn per trial and applied once, converting
+  that trial's JPY total to USD. Reports P10/P50/P80/P90; the wizard's
+  headline is P80, debounced ~300ms after the config settles (10k trials
+  takes ~100-150ms, too slow for every keystroke but fine settled).
+- **Additive envelope** (`computeAdditiveEnvelope`): sum every line's low,
+  sum every line's high — the "everything goes wrong / everything goes
+  right" honest-but-too-wide-to-budget-to bound.
+
+`engine/sensitivity.ts` recomputes the deterministic total with each of 8
+inputs (nights, lodging tier, party size, dinner tier, splurge meal count,
+FX rate, intercity strategy, activity fallback tier) moved one notch up
+and down, sorted by impact — the tornado-chart ordering.
