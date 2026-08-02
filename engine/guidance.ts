@@ -284,6 +284,25 @@ function nearestSweetSpotSeason(seasons: SeasonRecord[], fromMonthDay: string): 
   )
 }
 
+// §5.1: shifts a config's start date to the nearest shoulder ("sweet_spot")
+// season relative to `fromMonthDay`, keeping the reference date's year.
+// Returns null when there's no sweet_spot season in the data at all.
+// Exported so the "what if" panel (§6) can preview the same shift the
+// season-shift-counterfactual guidance rule quantifies, without
+// duplicating the nearest-season search.
+export function shiftToNearestShoulderSeason(config: TripConfig, priceData: PriceData, fromMonthDay: string, referenceDate: string): TripConfig | null {
+  const target = nearestSweetSpotSeason(priceData.seasons, fromMonthDay)
+  if (!target) return null
+
+  const referenceYear = referenceDate.slice(0, 4)
+  const shiftedStartDate = `${referenceYear}-${target.startMonthDay}`
+
+  return {
+    ...config,
+    timing: { ...config.timing, startDate: shiftedStartDate, season: null },
+  }
+}
+
 // §5.1: for a trip that overlaps a peak/elevated season, quantify what
 // shifting to the nearest shoulder ("sweet_spot") season would save at the
 // P80 level — the single most actionable piece of guidance the tool can
@@ -292,17 +311,9 @@ function seasonShiftCounterfactualRule(ctx: GuidanceContext): GuidanceMessage[] 
   if (ctx.budget.seasonOverlaps.length === 0) return []
 
   const overlap = ctx.budget.seasonOverlaps[0]
-  const fromMonthDay = overlap.season.startMonthDay
-  const target = nearestSweetSpotSeason(ctx.priceData.seasons, fromMonthDay)
-  if (!target) return []
-
-  const referenceYear = ctx.budget.referenceDate.slice(0, 4)
-  const shiftedStartDate = `${referenceYear}-${target.startMonthDay}`
-
-  const shiftedConfig: TripConfig = {
-    ...ctx.config,
-    timing: { ...ctx.config.timing, startDate: shiftedStartDate, season: null },
-  }
+  const shiftedConfig = shiftToNearestShoulderSeason(ctx.config, ctx.priceData, overlap.season.startMonthDay, ctx.budget.referenceDate)
+  if (!shiftedConfig) return []
+  const target = nearestSweetSpotSeason(ctx.priceData.seasons, overlap.season.startMonthDay)!
 
   const baseline = runMonteCarlo(ctx.config, ctx.priceData, { seed: 1 })
   const shifted = runMonteCarlo(shiftedConfig, ctx.priceData, { seed: 1 })

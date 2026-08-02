@@ -75,6 +75,12 @@ export interface MonteCarloOptions {
   correlated?: boolean
 }
 
+export interface HistogramBin {
+  x0: number
+  x1: number
+  count: number
+}
+
 export interface MonteCarloResult {
   trials: number
   seed: number
@@ -82,6 +88,31 @@ export interface MonteCarloResult {
   usdParty: Percentiles
   jpyPerPerson: Percentiles
   jpyParty: Percentiles
+  // §6: "Distribution histogram with P10/P50/P80/P90 markers" — the binned
+  // per-person USD trial outcomes, for the UI to draw without re-running
+  // the simulation. Sorted, equal-width bins; empty input yields [].
+  histogramUsdPerPerson: HistogramBin[]
+}
+
+const DEFAULT_HISTOGRAM_BIN_COUNT = 24
+
+function buildHistogram(sortedValues: number[], binCount = DEFAULT_HISTOGRAM_BIN_COUNT): HistogramBin[] {
+  if (sortedValues.length === 0) return []
+  const min = sortedValues[0]
+  const max = sortedValues[sortedValues.length - 1]
+  if (min === max) return [{ x0: min, x1: max, count: sortedValues.length }]
+
+  const width = (max - min) / binCount
+  const bins: HistogramBin[] = Array.from({ length: binCount }, (_, i) => ({
+    x0: min + i * width,
+    x1: min + (i + 1) * width,
+    count: 0,
+  }))
+  for (const value of sortedValues) {
+    const index = Math.min(binCount - 1, Math.floor((value - min) / width))
+    bins[index].count += 1
+  }
+  return bins
 }
 
 const LODGING_MARKET_FACTOR_STD_DEV = 0.08
@@ -164,6 +195,8 @@ export function runMonteCarlo(config: TripConfig, priceData: PriceData, options:
   const jpyParty = percentilesOf(jpyTotals)
   const usdParty = percentilesOf(usdTotals)
 
+  const usdPerPersonTotals = totalPeopleCount > 0 ? usdTotals.map((v) => v / totalPeopleCount) : usdTotals
+
   return {
     trials,
     seed,
@@ -171,5 +204,6 @@ export function runMonteCarlo(config: TripConfig, priceData: PriceData, options:
     jpyPerPerson: divideBy(jpyParty, totalPeopleCount),
     usdParty,
     usdPerPerson: divideBy(usdParty, totalPeopleCount),
+    histogramUsdPerPerson: buildHistogram(usdPerPersonTotals),
   }
 }

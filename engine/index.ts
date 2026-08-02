@@ -12,10 +12,10 @@ export { multiplyByBasis, totalPeople, fareEquivalentPeople, childFareFraction }
 export { lodgingTax, departureTax } from './tax'
 export { optimizeTransport, findTransportOption } from './transportOptimizer'
 export { runMonteCarlo, computeAdditiveEnvelope } from './monteCarlo'
-export type { MonteCarloResult, Percentiles, AdditiveEnvelopeResult } from './monteCarlo'
-export { computeSensitivity } from './sensitivity'
+export type { MonteCarloResult, Percentiles, AdditiveEnvelopeResult, HistogramBin } from './monteCarlo'
+export { computeSensitivity, shiftNights, shiftLodgingTier } from './sensitivity'
 export type { SensitivityFactor } from './sensitivity'
-export { computeGuidance } from './guidance'
+export { computeGuidance, shiftToNearestShoulderSeason } from './guidance'
 export type { GuidanceMessage, GuidanceCategory, GuidanceOptions } from './guidance'
 
 // loadPriceData is deliberately NOT re-exported here: it does `node:fs` I/O
