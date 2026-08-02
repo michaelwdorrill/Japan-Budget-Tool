@@ -24,6 +24,15 @@ export function addDaysToIsoDate(isoDate: string, days: number): string {
   return date.toISOString().slice(0, 10)
 }
 
+// Whole days from `fromIsoDate` to `toIsoDate` (negative if `to` precedes
+// `from`). Used by the wizard's calendar-mode "When" step to turn a
+// depart/return date pair into a nights count.
+export function daysBetweenIsoDates(fromIsoDate: string, toIsoDate: string): number {
+  const from = new Date(`${fromIsoDate}T00:00:00Z`).getTime()
+  const to = new Date(`${toIsoDate}T00:00:00Z`).getTime()
+  return Math.round((to - from) / (24 * 60 * 60 * 1000))
+}
+
 // The start date of each leg, computed as referenceDate + the cumulative
 // nights of every leg before it.
 export function legStartDates(referenceDate: string, legs: Leg[]): string[] {
