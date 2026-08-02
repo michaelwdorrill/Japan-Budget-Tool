@@ -4,14 +4,11 @@ import type { TripConfig } from '../../engine/trip'
 import { priceData } from '../data'
 import { useTripConfig } from '../state/TripConfigContext'
 import { applyPreset, type Preset } from '../presets'
+import { formatCurrency } from '../currency'
 
 interface Scenario {
   label: string
   config: TripConfig
-}
-
-function formatUsd(amountUsd: number): string {
-  return `$${amountUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 }
 
 const PRESET_LABELS: Record<Preset, string> = { lean: 'Lean', comfortable: 'Comfortable', splurge: 'Splurge' }
@@ -49,13 +46,16 @@ function ScenarioSlot({ slot, onSet, onClear }: { slot: Scenario | null; onSet: 
             <p className="scenario-slot__error">Can't price: {result.error}</p>
           ) : result ? (
             <>
-              <div className="scenario-slot__amount">{formatUsd(result.p80)} <span>P80/person</span></div>
-              <div className="scenario-slot__secondary">{formatUsd(result.p50)} P50/person</div>
+              <div className="scenario-slot__amount">
+                {formatCurrency(result.p80, slot.config.money.currencyCode)} <span>P80/person</span>
+              </div>
+              <div className="scenario-slot__secondary">{formatCurrency(result.p50, slot.config.money.currencyCode)} P50/person</div>
               <div className="scenario-slot__secondary">
-                {jpyToUsd(result.partyP80Jpy, config.money.jpyPerUsd, { cardFxFeePct: config.money.cardFxFeePct }).toLocaleString('en-US', {
-                  maximumFractionDigits: 0,
-                })}{' '}
-                USD total for the party (P80)
+                {formatCurrency(
+                  jpyToUsd(result.partyP80Jpy, slot.config.money.jpyPerUsd, { cardFxFeePct: slot.config.money.cardFxFeePct }),
+                  slot.config.money.currencyCode,
+                )}{' '}
+                total for the party (P80)
               </div>
             </>
           ) : null}

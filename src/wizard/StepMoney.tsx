@@ -1,5 +1,6 @@
 import { useTripConfig } from '../state/TripConfigContext'
 import type { TripConfig } from '../../engine/trip'
+import { SUPPORTED_CURRENCIES, currencySymbolFor } from '../currency'
 
 type FlightMode = TripConfig['flight']['mode']
 
@@ -23,6 +24,8 @@ export function StepMoney() {
     updateConfig((c) => ({ ...c, shopping: { personalBudgetJpy: Math.max(0, value) } }))
   }
 
+  const currencySymbol = currencySymbolFor(money.currencyCode)
+
   return (
     <div className="step-form">
       <fieldset>
@@ -42,7 +45,7 @@ export function StepMoney() {
 
         {flight.mode === 'cash' && (
           <label>
-            Estimated airfare (USD, per person)
+            Estimated airfare ({currencySymbol}, per person)
             <input
               type="number"
               min={0}
@@ -82,7 +85,7 @@ export function StepMoney() {
 
         {flight.mode !== 'exclude' && (
           <label>
-            Taxes, fees &amp; carrier surcharges (USD, per person)
+            Taxes, fees &amp; carrier surcharges ({currencySymbol}, per person)
             <input
               type="number"
               min={0}
@@ -96,7 +99,21 @@ export function StepMoney() {
       <fieldset>
         <legend>Currency</legend>
         <label>
-          JPY per USD
+          Home currency
+          <select value={money.currencyCode ?? 'USD'} onChange={(e) => setMoneyField('currencyCode', e.target.value)}>
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label} ({c.symbol})
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="field-note">
+          §7 seam: FX conversion happens the same way regardless of currency — only the display symbol changes. Every USD-labeled
+          amount above is really "your home currency."
+        </p>
+        <label>
+          JPY per {currencySymbol}
           <input type="number" min={1} value={money.jpyPerUsd} onChange={(e) => setMoneyField('jpyPerUsd', Number(e.target.value))} />
         </label>
         <label>

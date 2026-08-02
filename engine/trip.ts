@@ -44,11 +44,19 @@ export interface TripConfig {
   }
 
   money: {
+    // §7: "home-currency support: the FX layer already handles this; add a
+    // currency picker and the display layer follows" — jpyPerUsd is really
+    // "JPY per unit of home currency" once currencyCode is anything other
+    // than USD; the field name is legacy from the single-currency v1 and
+    // kept as-is rather than renamed, to avoid breaking existing shared
+    // URLs/fixtures. currencyCode is display-only: it never changes the
+    // JPY math, only which symbol/label the UI formats amounts with.
     jpyPerUsd: number
     fxStressPct: number // ± band, default 10
     cardFxFeePct: number // 0 for a no-FX-fee card, else 3
     cashJpyPerPersonPerDay: number // how much they'll pull from ATMs
     contingencyPct: number // default 10, applied to variable costs only
+    currencyCode?: string // ISO 4217, e.g. 'USD', 'EUR'; defaults to 'USD' when unset
   }
 
   transport: {

@@ -1,8 +1,5 @@
 import type { HistogramBin, Percentiles } from '../../engine/index'
-
-function formatUsd(amountUsd: number): string {
-  return `$${amountUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-}
+import { formatCurrency } from '../currency'
 
 const MARKERS: Array<{ key: keyof Percentiles; label: string }> = [
   { key: 'p10', label: 'P10' },
@@ -15,7 +12,15 @@ const MARKERS: Array<{ key: keyof Percentiles; label: string }> = [
 // series (magnitude, sequential blue) — no legend needed for the bars
 // themselves; the four percentile lines are labeled directly since there
 // are only four, well within the "label selectively" rule.
-export function DistributionHistogram({ bins, percentiles }: { bins: HistogramBin[]; percentiles: Percentiles }) {
+export function DistributionHistogram({
+  bins,
+  percentiles,
+  currencyCode,
+}: {
+  bins: HistogramBin[]
+  percentiles: Percentiles
+  currencyCode: string | undefined
+}) {
   if (bins.length === 0) return null
 
   const min = bins[0].x0
@@ -31,7 +36,7 @@ export function DistributionHistogram({ bins, percentiles }: { bins: HistogramBi
             key={i}
             className="histogram__bar"
             style={{ height: `${(bin.count / maxCount) * 100}%` }}
-            title={`${formatUsd(bin.x0)}–${formatUsd(bin.x1)}: ${bin.count} trials`}
+            title={`${formatCurrency(bin.x0, currencyCode)}–${formatCurrency(bin.x1, currencyCode)}: ${bin.count} trials`}
           />
         ))}
         {MARKERS.map(({ key, label }, i) => {
@@ -45,15 +50,15 @@ export function DistributionHistogram({ bins, percentiles }: { bins: HistogramBi
             >
               <span className="histogram__marker-line" />
               <span className="histogram__marker-label">
-                {label} {formatUsd(value)}
+                {label} {formatCurrency(value, currencyCode)}
               </span>
             </div>
           )
         })}
       </div>
       <div className="histogram__axis">
-        <span>{formatUsd(min)}</span>
-        <span>{formatUsd(max)}</span>
+        <span>{formatCurrency(min, currencyCode)}</span>
+        <span>{formatCurrency(max, currencyCode)}</span>
       </div>
     </div>
   )

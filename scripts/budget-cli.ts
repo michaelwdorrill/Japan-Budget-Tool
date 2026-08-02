@@ -6,6 +6,7 @@ import { computeBudget, computeGuidance } from '../engine/index'
 import { loadPriceData } from '../engine/loadPriceData'
 import type { TripConfig } from '../engine/trip'
 import type { Category } from '../engine/price'
+import { currencySymbolFor } from '../src/currency'
 
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 
@@ -79,7 +80,8 @@ function main() {
   console.log(`TOTAL (per person)`.padEnd(58) + formatJpy(result.totalJpyPerPerson).padStart(14))
 
   if (result.pointsOpportunityCostUsd > 0) {
-    console.log(`\nPoints opportunity cost (display-only, not in total): $${result.pointsOpportunityCostUsd.toFixed(2)}`)
+    const symbol = currencySymbolFor(config.money.currencyCode)
+    console.log(`\nPoints opportunity cost (display-only, not in total): ${symbol}${result.pointsOpportunityCostUsd.toFixed(2)}`)
   }
 
   for (const { cityId, warning } of result.bracketEdgeWarnings) {

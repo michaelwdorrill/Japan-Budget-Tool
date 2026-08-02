@@ -61,7 +61,11 @@ export function OutputsPanel() {
       {monteCarlo && (
         <>
           <h3>Distribution of outcomes</h3>
-          <DistributionHistogram bins={monteCarlo.histogramUsdPerPerson} percentiles={monteCarlo.usdPerPerson} />
+          <DistributionHistogram
+            bins={monteCarlo.histogramUsdPerPerson}
+            percentiles={monteCarlo.usdPerPerson}
+            currencyCode={config.money.currencyCode}
+          />
         </>
       )}
 

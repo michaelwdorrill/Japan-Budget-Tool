@@ -3,13 +3,10 @@ import { computeBudget, jpyToUsd } from '../../engine/index'
 import type { Category } from '../../engine/price'
 import { priceData } from '../data'
 import { useTripConfig } from '../state/TripConfigContext'
+import { currencySymbolFor, formatCurrency } from '../currency'
 
 function formatJpy(amountJpy: number): string {
   return `¥${Math.round(amountJpy).toLocaleString('en-US')}`
-}
-
-function formatUsd(amountUsd: number): string {
-  return `$${amountUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 }
 
 const CATEGORY_LABELS: Record<Category, string> = {
@@ -54,16 +51,18 @@ export function PrintSummary() {
 
   const jpyPerUsd = config.money.jpyPerUsd
   const cardFxFeePct = config.money.cardFxFeePct
+  const currencyCode = config.money.currencyCode
   const totalPeople = config.party.adults + config.party.children.length
-  const totalUsd = jpyToUsd(budget.totalJpyParty, jpyPerUsd, { cardFxFeePct })
-  const perPersonUsd = jpyToUsd(budget.totalJpyPerPerson, jpyPerUsd, { cardFxFeePct })
+  const totalAmount = jpyToUsd(budget.totalJpyParty, jpyPerUsd, { cardFxFeePct })
+  const perPersonAmount = jpyToUsd(budget.totalJpyPerPerson, jpyPerUsd, { cardFxFeePct })
 
   return (
     <div className="print-summary">
       {/* The page's <h1> (App.tsx) sits outside .wizard, so it's already
           visible under print — no need to repeat it here. */}
       <p className="print-summary__meta">
-        Reference date: {budget.referenceDate} · {totalPeople} {totalPeople === 1 ? 'person' : 'people'} · ¥{jpyPerUsd}/$
+        Reference date: {budget.referenceDate} · {totalPeople} {totalPeople === 1 ? 'person' : 'people'} · ¥{jpyPerUsd}/
+        {currencySymbolFor(currencyCode)}
       </p>
 
       <table className="print-summary__table">
@@ -85,13 +84,13 @@ export function PrintSummary() {
           <tr>
             <td>Total, party</td>
             <td>
-              {formatJpy(budget.totalJpyParty)} ({formatUsd(totalUsd)})
+              {formatJpy(budget.totalJpyParty)} ({formatCurrency(totalAmount, currencyCode)})
             </td>
           </tr>
           <tr>
             <td>Total, per person</td>
             <td>
-              {formatJpy(budget.totalJpyPerPerson)} ({formatUsd(perPersonUsd)})
+              {formatJpy(budget.totalJpyPerPerson)} ({formatCurrency(perPersonAmount, currencyCode)})
             </td>
           </tr>
         </tfoot>
