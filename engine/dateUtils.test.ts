@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDaysToIsoDate, findOverlappingSeason, legStartDates, resolveReferenceDate } from './dateUtils'
+import { addDaysToIsoDate, daysBetweenIsoDates, findOverlappingSeason, legStartDates, resolveReferenceDate } from './dateUtils'
 import { testPriceData } from './testFixtures/priceData'
 import { baseTripConfig } from './testFixtures/tripConfig'
 import type { Leg } from './trip'
@@ -49,6 +49,24 @@ describe('addDaysToIsoDate', () => {
 
   it('rolls over a year boundary', () => {
     expect(addDaysToIsoDate('2026-12-30', 5)).toBe('2027-01-04')
+  })
+})
+
+describe('daysBetweenIsoDates', () => {
+  it('counts whole days forward', () => {
+    expect(daysBetweenIsoDates('2026-09-05', '2026-09-19')).toBe(14)
+  })
+
+  it('is negative when `to` precedes `from`', () => {
+    expect(daysBetweenIsoDates('2026-09-19', '2026-09-05')).toBe(-14)
+  })
+
+  it('is zero for the same date', () => {
+    expect(daysBetweenIsoDates('2026-09-05', '2026-09-05')).toBe(0)
+  })
+
+  it('crosses a month boundary correctly', () => {
+    expect(daysBetweenIsoDates('2026-08-28', '2026-09-03')).toBe(6)
   })
 })
 

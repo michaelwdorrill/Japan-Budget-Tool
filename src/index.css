@@ -322,6 +322,34 @@ h1 {
   color: var(--warning);
 }
 
+.calendar-toggle {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.calendar-window {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calendar-window__assumptions {
+  display: flex;
+  gap: 16px;
+}
+
+.calendar-window__summary {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+
 .presets {
   display: flex;
   flex-wrap: wrap;
