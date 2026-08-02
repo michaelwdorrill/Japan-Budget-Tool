@@ -56,7 +56,9 @@ function legWithMostNights(legs: Leg[]): number {
   return maxIndex
 }
 
-function shiftNights(config: TripConfig, delta: number): TripConfig {
+// Exported for the "what if" panel (§6), which previews the same one-notch
+// shifts this module uses to measure impact.
+export function shiftNights(config: TripConfig, delta: number): TripConfig {
   const next = cloneConfig(config)
   const index = legWithMostNights(next.itinerary.legs)
   next.itinerary.legs[index].nights = Math.max(0, next.itinerary.legs[index].nights + delta)
@@ -64,7 +66,8 @@ function shiftNights(config: TripConfig, delta: number): TripConfig {
   return next
 }
 
-function shiftLodgingTier(config: TripConfig, delta: number, priceData: PriceData): TripConfig {
+// Exported for the "what if" panel (§6): "one tier down on lodging."
+export function shiftLodgingTier(config: TripConfig, delta: number, priceData: PriceData): TripConfig {
   const next = cloneConfig(config)
   for (const leg of next.itinerary.legs) {
     if (MEALS_INCLUDED_TIERS.includes(leg.lodgingTier)) continue // not on the niceness ladder

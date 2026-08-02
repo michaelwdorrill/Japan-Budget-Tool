@@ -112,6 +112,28 @@ describe('runMonteCarlo — sanity', () => {
   })
 })
 
+describe('runMonteCarlo — histogramUsdPerPerson (§6 distribution histogram)', () => {
+  it('bins every trial, covering the full min-max range with monotonically increasing edges', () => {
+    const config = baseTripConfig()
+    const result = runMonteCarlo(config, testPriceData, { seed: 1, trials: 2000 })
+    const bins = result.histogramUsdPerPerson
+
+    expect(bins.length).toBeGreaterThan(1)
+    expect(bins.reduce((sum, b) => sum + b.count, 0)).toBe(2000)
+    expect(bins[0].x0).toBeLessThanOrEqual(result.usdPerPerson.p10)
+    expect(bins[bins.length - 1].x1).toBeGreaterThanOrEqual(result.usdPerPerson.p90)
+    for (let i = 1; i < bins.length; i++) {
+      expect(bins[i].x0).toBeCloseTo(bins[i - 1].x1, 6)
+    }
+  })
+
+  it('falls back to the party total when there are zero people, without dividing by zero', () => {
+    const config = baseTripConfig({ party: { adults: 0, children: [], rooms: 1 }, flight: { mode: 'exclude', taxesAndFeesUsd: 0 } })
+    const result = runMonteCarlo(config, testPriceData, { seed: 1, trials: 500 })
+    expect(result.histogramUsdPerPerson.reduce((sum, b) => sum + b.count, 0)).toBe(500)
+  })
+})
+
 describe('computeAdditiveEnvelope', () => {
   it('sums every line item low and every line item high, plus contingency on the variable low/high', () => {
     const config = multiLegConfig()
