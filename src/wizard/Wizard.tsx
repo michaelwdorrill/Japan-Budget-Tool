@@ -3,6 +3,8 @@ import { WIZARD_STEPS } from './steps'
 import { RunningTotal } from '../components/RunningTotal'
 import { ShareLink } from '../components/ShareLink'
 import { GuidancePanel } from '../components/GuidancePanel'
+import { ExportPanel } from '../components/ExportPanel'
+import { PrintSummary } from '../components/PrintSummary'
 
 export function Wizard() {
   const [stepIndex, setStepIndex] = useState(0)
@@ -14,6 +16,7 @@ export function Wizard() {
       <aside className="wizard__sidebar">
         <RunningTotal />
         <ShareLink />
+        <ExportPanel />
         <GuidancePanel />
       </aside>
 
@@ -53,6 +56,8 @@ export function Wizard() {
           </button>
         </div>
       </div>
+
+      <PrintSummary />
     </div>
   )
 }

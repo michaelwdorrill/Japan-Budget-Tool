@@ -24,7 +24,9 @@ export function decodeTripConfig(encoded: string): TripConfig | null {
 
 // A structural sanity check, not full schema validation — just enough to
 // refuse to hand a malformed object to the engine and crash the app.
-function isPlausibleTripConfig(value: unknown): value is TripConfig {
+// Exported for the JSON export/import panel (§6), which needs the same
+// check on a file the user picked, outside the URL-decoding path.
+export function isPlausibleTripConfig(value: unknown): value is TripConfig {
   if (typeof value !== 'object' || value === null) return false
   const v = value as Record<string, unknown>
   return (
