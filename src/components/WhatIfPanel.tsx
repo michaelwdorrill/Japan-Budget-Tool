@@ -2,10 +2,7 @@ import { useMemo, useState } from 'react'
 import { computeBudget, jpyToUsd, shiftLodgingTier, shiftNights, shiftToNearestShoulderSeason } from '../../engine/index'
 import { priceData } from '../data'
 import { useTripConfig } from '../state/TripConfigContext'
-
-function formatUsd(amountUsd: number): string {
-  return `$${amountUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-}
+import { currencySymbolFor, formatCurrency } from '../currency'
 
 interface WhatIfRow {
   id: string
@@ -70,12 +67,13 @@ export function WhatIfPanel({ baselineJpyPerPerson, baselineUsdPerPerson }: { ba
   const slidFxRate = config.money.jpyPerUsd * (1 + fxSliderPct / 100)
   const fxUsd = jpyToUsd(baselineJpyPerPerson, slidFxRate, { cardFxFeePct: config.money.cardFxFeePct })
   const fxDelta = fxUsd - baselineUsdPerPerson
+  const currencyCode = config.money.currencyCode
 
   return (
     <div className="what-if-panel viz-root">
       <div className="what-if-panel__row what-if-panel__row--slider">
         <label htmlFor="what-if-fx-slider">
-          FX rate: ¥{slidFxRate.toFixed(1)}/$ ({fxSliderPct > 0 ? '+' : ''}
+          FX rate: ¥{slidFxRate.toFixed(1)}/{currencySymbolFor(currencyCode)} ({fxSliderPct > 0 ? '+' : ''}
           {fxSliderPct}%)
         </label>
         <input
@@ -87,20 +85,20 @@ export function WhatIfPanel({ baselineJpyPerPerson, baselineUsdPerPerson }: { ba
           value={fxSliderPct}
           onChange={(e) => setFxSliderPct(Number(e.target.value))}
         />
-        <DeltaTag deltaUsdPerPerson={fxDelta} />
+        <DeltaTag deltaUsdPerPerson={fxDelta} currencyCode={currencyCode} />
       </div>
 
       {rows.map((row) => (
         <div key={row.id} className="what-if-panel__row">
           <span className="what-if-panel__label">{row.label}</span>
-          <DeltaTag deltaUsdPerPerson={row.deltaUsdPerPerson} />
+          <DeltaTag deltaUsdPerPerson={row.deltaUsdPerPerson} currencyCode={currencyCode} />
         </div>
       ))}
     </div>
   )
 }
 
-function DeltaTag({ deltaUsdPerPerson }: { deltaUsdPerPerson: number | null }) {
+function DeltaTag({ deltaUsdPerPerson, currencyCode }: { deltaUsdPerPerson: number | null; currencyCode: string | undefined }) {
   if (deltaUsdPerPerson === null) {
     return <span className="what-if-panel__delta what-if-panel__delta--na">not applicable</span>
   }
@@ -111,7 +109,7 @@ function DeltaTag({ deltaUsdPerPerson }: { deltaUsdPerPerson: number | null }) {
   return (
     <span className={`what-if-panel__delta ${isIncrease ? 'what-if-panel__delta--up' : 'what-if-panel__delta--down'}`}>
       {isIncrease ? '+' : '−'}
-      {formatUsd(Math.abs(deltaUsdPerPerson))}/person
+      {formatCurrency(Math.abs(deltaUsdPerPerson), currencyCode)}/person
     </span>
   )
 }
