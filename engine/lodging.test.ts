@@ -76,34 +76,75 @@ describe('computeLodging', () => {
     expect(taxLine?.highJpy).toBe(10000 * 2) // ¥20,000: high bound crosses into the top bracket
   })
 
-  it('applies a peak-season lodging multiplier when the leg overlaps a season window (§5.1)', () => {
-    const config = baseTripConfig({
+  // §5.1, corrected. A season window overlapping a leg used to multiply the
+  // whole leg's room rate — so one qualifying night repriced every other
+  // night in the stay. A season is now a warning only (see guidance.ts);
+  // the room rate is exactly what the price record says.
+  it('does not reprice a room because the leg overlaps a season window', () => {
+    const inSeason = baseTripConfig({
       party: { adults: 2, children: [], rooms: 1 },
       timing: { startDate: '2026-03-25', season: null, nights: 3 },
-      itinerary: {
-        arrivalAirport: 'NRT',
-        departureAirport: 'NRT',
-        legs: [legWith({ cityId: 'tokyo', nights: 3 })],
-      },
+      itinerary: { arrivalAirport: 'NRT', departureAirport: 'NRT', legs: [legWith({ cityId: 'tokyo', nights: 3 })] },
     })
-    // Business tier: low ¥8,000/expected ¥10,000/high ¥15,000 per room/night, 1 room, 3 nights.
-    // test_season (2026-03-20 to 2026-04-10) multiplier: low 1.4x, high 2.2x, mid 1.8x.
+    const outOfSeason = baseTripConfig({
+      party: { adults: 2, children: [], rooms: 1 },
+      timing: { startDate: '2026-06-01', season: null, nights: 3 },
+      itinerary: { arrivalAirport: 'NRT', departureAirport: 'NRT', legs: [legWith({ cityId: 'tokyo', nights: 3 })] },
+    })
+
+    const inSeasonRoom = computeLodging(inSeason, testPriceData, '2026-03-25').lineItems.find((i) => i.subcategory === 'B1')
+    const outOfSeasonRoom = computeLodging(outOfSeason, testPriceData, '2026-06-01').lineItems.find((i) => i.subcategory === 'B1')
+
+    expect(inSeasonRoom?.amountJpy).toBe(10000 * 3)
+    expect(inSeasonRoom?.amountJpy).toBe(outOfSeasonRoom?.amountJpy)
+    expect(inSeasonRoom?.label).not.toContain('pricing')
+  })
+
+  it('still reports which seasons a leg overlaps, so the guidance layer can warn', () => {
+    const config = baseTripConfig({
+      timing: { startDate: '2026-03-25', season: null, nights: 3 },
+      itinerary: { arrivalAirport: 'NRT', departureAirport: 'NRT', legs: [legWith({ cityId: 'tokyo', nights: 3 })] },
+    })
     const result = computeLodging(config, testPriceData, '2026-03-25')
-    const roomLine = result.lineItems.find((i) => i.subcategory === 'B1')
-    expect(roomLine?.lowJpy).toBe(Math.round(8000 * 3 * 1.4))
-    expect(roomLine?.amountJpy).toBe(Math.round(10000 * 3 * 1.8))
-    expect(roomLine?.highJpy).toBe(Math.round(15000 * 3 * 2.2))
-    expect(roomLine?.label).toContain('Test season')
     expect(result.seasonOverlaps).toHaveLength(1)
     expect(result.seasonOverlaps[0]).toMatchObject({ cityId: 'tokyo', legIndex: 0 })
   })
 
-  it('does not apply a season multiplier when the leg falls outside every season window', () => {
+  it('reports no season overlap when the leg falls outside every window', () => {
     const config = baseTripConfig({ timing: { startDate: '2026-06-01', season: null, nights: 3 } })
-    const result = computeLodging(config, testPriceData, '2026-06-01')
-    expect(result.seasonOverlaps).toHaveLength(0)
-    const roomLine = result.lineItems.find((i) => i.subcategory === 'B1')
-    expect(roomLine?.label).not.toContain('pricing')
+    expect(computeLodging(config, testPriceData, '2026-06-01').seasonOverlaps).toHaveLength(0)
+  })
+
+  // Accommodation tax is charged per night under the rule in force that
+  // night. 'testville' switches from ¥100 to ¥200 on 2026-06-15.
+  it('charges each night under the tax rule effective on that night', () => {
+    const config = baseTripConfig({
+      party: { adults: 1, children: [], rooms: 1 },
+      timing: { startDate: '2026-06-14', season: null, nights: 2 },
+      itinerary: { arrivalAirport: 'NRT', departureAirport: 'NRT', legs: [legWith({ cityId: 'testville', nights: 2 })] },
+    })
+    const taxLine = computeLodging(config, testPriceData, '2026-06-14').lineItems.find((i) => i.subcategory === 'B2')
+    // Night 1 (06-14) at ¥100 + night 2 (06-15) at ¥200. Freezing the trip
+    // start date for the whole leg would have charged ¥200.
+    expect(taxLine?.amountJpy).toBe(300)
+  })
+
+  it('marks the accommodation tax line as fixed so the roll-up cannot widen it with hotel volatility', () => {
+    const config = baseTripConfig()
+    const taxLine = computeLodging(config, testPriceData, '2026-06-01').lineItems.find((i) => i.subcategory === 'B2')
+    expect(taxLine?.uncertainty).toBe('fixed')
+  })
+
+  it('includes the leg index in line-item ids so a revisited city cannot collide', () => {
+    const config = baseTripConfig({
+      itinerary: {
+        arrivalAirport: 'NRT',
+        departureAirport: 'NRT',
+        legs: [legWith({ cityId: 'tokyo', nights: 2 }), legWith({ cityId: 'kyoto', nights: 1 }), legWith({ cityId: 'tokyo', nights: 2 })],
+      },
+    })
+    const ids = computeLodging(config, testPriceData, '2026-06-01').lineItems.map((i) => i.id)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('omits the tax line entirely when the city has no applicable tax record', () => {

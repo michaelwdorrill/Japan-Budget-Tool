@@ -125,7 +125,7 @@ export function StepMoney() {
           <input type="number" min={0} step={0.1} value={money.cardFxFeePct} onChange={(e) => setMoneyField('cardFxFeePct', Number(e.target.value))} />
         </label>
         <label>
-          Cash withdrawn (JPY/person/day)
+          Cash withdrawn (JPY/person/day) — planning aid, not added to the total
           <input
             type="number"
             min={0}
@@ -133,6 +133,10 @@ export function StepMoney() {
             onChange={(e) => setMoneyField('cashJpyPerPersonPerDay', Number(e.target.value))}
           />
         </label>
+        <p className="field-note">
+          How much of your budget you expect to carry as cash rather than put on a card. It splits the same spend between payment
+          methods, so it deliberately does not change the total — the label used to imply otherwise.
+        </p>
       </fieldset>
 
       <fieldset>

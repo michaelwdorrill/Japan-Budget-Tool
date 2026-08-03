@@ -4,36 +4,113 @@
   "title": "Rail passes and discount products",
   "type": "object",
   "additionalProperties": false,
-  "required": ["nationalPasses", "regionalPasses", "discountProducts"],
+  "required": [
+    "nationalPasses",
+    "regionalPasses",
+    "discountProducts"
+  ],
   "properties": {
     "nationalPasses": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "label", "days", "railClass", "priceJpyOfficialChannel", "priceJpyOverseasAgent", "childDiscountPct", "nozomiMizuhoSupplementJpy", "asOf", "source", "confidence"],
+        "required": [
+          "id",
+          "label",
+          "days",
+          "railClass",
+          "priceJpyOfficialChannel",
+          "priceJpyOverseasAgent",
+          "childDiscountPct",
+          "nozomiMizuhoSupplementJpy",
+          "asOf",
+          "source",
+          "confidence",
+          "salesEndDate"
+        ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "label": { "type": "string", "minLength": 1 },
-          "days": { "type": "integer", "minimum": 1 },
-          "railClass": { "type": "string", "enum": ["ordinary", "green"] },
-          "priceJpyOfficialChannel": { "type": "integer", "minimum": 0 },
-          "priceJpyOverseasAgent": { "type": "integer", "minimum": 0 },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "railClass": {
+            "type": "string",
+            "enum": [
+              "ordinary",
+              "green"
+            ]
+          },
+          "priceJpyOfficialChannel": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "priceJpyOverseasAgent": {
+            "type": "integer",
+            "minimum": 0
+          },
           "priceJpyOverseasAgentFrom": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["date", "priceJpy"],
+            "required": [
+              "date",
+              "priceJpy"
+            ],
             "properties": {
-              "date": { "type": "string", "format": "date" },
-              "priceJpy": { "type": "integer", "minimum": 0 }
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "priceJpy": {
+                "type": "integer",
+                "minimum": 0
+              }
             }
           },
-          "childDiscountPct": { "type": "number", "minimum": 0, "maximum": 100 },
-          "nozomiMizuhoSupplementJpy": { "type": "integer", "minimum": 0 },
-          "asOf": { "type": "string", "format": "date" },
-          "source": { "type": "string", "minLength": 1 },
-          "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
-          "notes": { "type": "string" }
+          "childDiscountPct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "nozomiMizuhoSupplementJpy": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "salesEndDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Last date the product can be purchased, inclusive. Null means still on sale. A product past this date cannot be ranked for later travel."
+          }
         }
       }
     },
@@ -42,19 +119,85 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "label", "operator", "coverage", "days", "priceJpy", "childDiscountPct", "asOf", "source", "confidence"],
+        "required": [
+          "id",
+          "label",
+          "operator",
+          "coverage",
+          "days",
+          "priceJpy",
+          "childDiscountPct",
+          "asOf",
+          "source",
+          "confidence",
+          "salesEndDate",
+          "railClass"
+        ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "label": { "type": "string", "minLength": 1 },
-          "operator": { "type": "string" },
-          "coverage": { "type": "array", "items": { "type": "string" } },
-          "days": { "type": "integer", "minimum": 1 },
-          "priceJpy": { "type": "integer", "minimum": 0 },
-          "childDiscountPct": { "type": "number", "minimum": 0, "maximum": 100 },
-          "asOf": { "type": "string", "format": "date" },
-          "source": { "type": "string", "minLength": 1 },
-          "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
-          "notes": { "type": "string" }
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operator": {
+            "type": "string"
+          },
+          "coverage": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "priceJpy": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "childDiscountPct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "salesEndDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Last date the product can be purchased, inclusive. Null means still on sale. A product past this date cannot be ranked for later travel."
+          },
+          "railClass": {
+            "type": "string",
+            "enum": [
+              "ordinary",
+              "green"
+            ]
+          }
         }
       }
     },
@@ -63,16 +206,62 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "label", "route", "priceJpy", "asOf", "source", "confidence"],
+        "required": [
+          "id",
+          "label",
+          "route",
+          "priceJpy",
+          "asOf",
+          "source",
+          "confidence",
+          "salesEndDate"
+        ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "label": { "type": "string", "minLength": 1 },
-          "route": { "type": ["string", "null"] },
-          "priceJpy": { "type": "integer", "minimum": 0 },
-          "notes": { "type": "string" },
-          "asOf": { "type": "string", "format": "date" },
-          "source": { "type": "string", "minLength": 1 },
-          "confidence": { "type": "string", "enum": ["high", "medium", "low"] }
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "route": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priceJpy": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "notes": {
+            "type": "string"
+          },
+          "asOf": {
+            "type": "string",
+            "format": "date"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "salesEndDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Last date the product can be purchased, inclusive. Null means still on sale. A product past this date cannot be ranked for later travel."
+          }
         }
       }
     }

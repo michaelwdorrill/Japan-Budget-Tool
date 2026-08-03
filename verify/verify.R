@@ -90,7 +90,7 @@ find_applicable_tax_record <- function(taxes, city_id, date) {
   candidates <- Filter(function(r) {
     identical(r$cityId, city_id) &&
       date >= r$effectiveFrom &&
-      (is.null(r$effectiveTo) || date < r$effectiveTo)
+      (is.null(r$effectiveTo) || date <= r$effectiveTo)
   }, taxes$accommodationTax)
 
   if (length(candidates) == 0) return(NULL)
@@ -115,14 +115,36 @@ lodging_tax_total <- function(taxes, city_id, nightly_rate_jpy, nights, people, 
   tax_per_person_per_night <- switch(record$structure,
     bracket_per_person_per_night = bracket_tax_jpy(record, nightly_rate_jpy),
     flat_per_person_per_night = record$flatTaxJpy,
-    percentage_per_person_per_night = round_half_up(nightly_rate_jpy * (record$percentageOfRate / 100)),
+    percentage_per_person_per_night = {
+      exemption_floor <- if (is.null(record$exemptionBelowJpy)) 0 else record$exemptionBelowJpy
+      if (nightly_rate_jpy < exemption_floor) 0 else floor(nightly_rate_jpy * (record$percentageOfRate / 100))
+    },
     stop(paste("unknown accommodation tax structure:", record$structure))
   )
 
   tax_per_person_per_night * nights * people
 }
 
-departure_tax_total <- function(taxes, people) taxes$departureTax$amountJpy * people
+# The International Tourist Tax is a dated schedule and exempts children
+# below the record's exemption age (engine/tax.ts).
+find_applicable_departure_record <- function(records, date) {
+  candidates <- Filter(function(r) {
+    date >= r$effectiveFrom && (is.null(r$effectiveTo) || date <= r$effectiveTo)
+  }, records)
+  if (length(candidates) == 0) return(NULL)
+  best <- candidates[[1]]
+  for (c in candidates) if (c$effectiveFrom > best$effectiveFrom) best <- c
+  best
+}
+
+departure_tax_total <- function(taxes, party, departure_date) {
+  record <- find_applicable_departure_record(taxes$departureTax, departure_date)
+  if (is.null(record)) return(0)
+  exempt_below_age <- if (is.null(record$exemptBelowAge)) 0 else record$exemptBelowAge
+  chargeable_children <- 0
+  for (child in party$children) if (child$age >= exempt_below_age) chargeable_children <- chargeable_children + 1
+  record$amountJpy * (party$adults + chargeable_children)
+}
 
 usd_to_jpy <- function(amount_usd, jpy_per_usd) round_half_up(amount_usd * jpy_per_usd)
 
@@ -130,7 +152,7 @@ usd_to_jpy <- function(amount_usd, jpy_per_usd) round_half_up(amount_usd * jpy_p
 # Category modules (A-H), mirroring engine/*.ts one file at a time.
 # ---------------------------------------------------------------------------
 
-compute_getting_there <- function(config, price_data) {
+compute_getting_there <- function(config, price_data, departure_date) {
   people <- total_people(config$party)
   total <- 0
 
@@ -138,7 +160,7 @@ compute_getting_there <- function(config, price_data) {
     total <- total + usd_to_jpy(config$flight$cashEstimateUsd, config$money$jpyPerUsd) * people
   }
   total <- total + usd_to_jpy(config$flight$taxesAndFeesUsd, config$money$jpyPerUsd) * people
-  total <- total + departure_tax_total(price_data$taxes, people)
+  total <- total + departure_tax_total(price_data$taxes, config$party, departure_date)
 
   home_side <- find_price(price_data$prices, function(p) identical(p$id, "home_side_transport"))
   total <- total + multiply_by_basis(home_side$basis, home_side$expected, people = people)
@@ -149,7 +171,9 @@ compute_getting_there <- function(config, price_data) {
   total
 }
 
-# §5.1: seasonal lodging multiplier date math, mirroring engine/dateUtils.ts.
+# §5.1 date math, mirroring engine/dateUtils.ts. Seasons are warnings only
+# in the TS engine now — they do not multiply a room rate — so no
+# multiplier appears here either.
 add_days_iso <- function(iso_date, days) {
   format(as.Date(iso_date) + days, "%Y-%m-%d")
 }
@@ -164,24 +188,19 @@ leg_start_dates <- function(reference_date, legs) {
   starts
 }
 
-month_day_of <- function(iso_date) substr(iso_date, 6, 10)
-
-is_month_day_in_window <- function(month_day, start_month_day, end_month_day) {
-  if (start_month_day <= end_month_day) {
-    return(month_day >= start_month_day && month_day <= end_month_day)
-  }
-  month_day >= start_month_day || month_day <= end_month_day
+leg_night_dates <- function(leg_start_date, nights) {
+  if (nights <= 0) return(character(0))
+  vapply(0:(nights - 1), function(i) add_days_iso(leg_start_date, i), character(1))
 }
 
-find_overlapping_season <- function(leg_start_date, nights, seasons) {
-  nights_to_check <- max(nights, 1)
-  for (i in 0:(nights_to_check - 1)) {
-    month_day <- month_day_of(add_days_iso(leg_start_date, i))
-    for (s in seasons) {
-      if (is_month_day_in_window(month_day, s$startMonthDay, s$endMonthDay)) return(s)
-    }
+# Accommodation tax is charged per night under the rule in force that
+# night, not once at the trip's reference date.
+tax_across_nights <- function(price_data, leg, leg_start_date, nightly_rate, people) {
+  total <- 0
+  for (night_date in leg_night_dates(leg_start_date, leg$nights)) {
+    total <- total + lodging_tax_total(price_data$taxes, leg$cityId, nightly_rate, 1, people, night_date)
   }
-  NULL
+  total
 }
 
 compute_leg_lodging <- function(leg, party, price_data, reference_date, leg_start_date) {
@@ -192,14 +211,8 @@ compute_leg_lodging <- function(leg, party, price_data, reference_date, leg_star
 
   room_cost <- multiply_by_basis(record$basis, record$expected, people = people, rooms = party$rooms, nights = leg$nights)
 
-  season <- find_overlapping_season(leg_start_date, leg$nights, price_data$seasons)
-  if (!is.null(season)) {
-    mid_multiplier <- (season$lodgingMultiplierLow + season$lodgingMultiplierHigh) / 2
-    room_cost <- round_half_up(room_cost * mid_multiplier)
-  }
-
   nightly_rate <- if (leg$nights > 0 && people > 0) round_half_up(room_cost / (leg$nights * people)) else 0
-  tax <- lodging_tax_total(price_data$taxes, leg$cityId, nightly_rate, leg$nights, people, reference_date)
+  tax <- tax_across_nights(price_data, leg, leg_start_date, nightly_rate, people)
 
   list(room = room_cost, tax = tax)
 }
@@ -312,7 +325,7 @@ evaluate_pass_option <- function(config, journeys, eligible_journeys, pass_id, d
   list(id = pass_id, totalJpy = pass_cost + paid_fare_jpy)
 }
 
-evaluate_discount_products_option <- function(config, price_data, journeys) {
+evaluate_discount_products_option <- function(config, price_data, journeys, travel_date) {
   fare_eq <- fare_equivalent_people(config$party)
   total <- 0
   substitutions <- 0
@@ -321,12 +334,13 @@ evaluate_discount_products_option <- function(config, price_data, journeys) {
     for (j in journeys) {
       route_id <- paste0(j$fromCityId, "-", j$toCityId)
       reverse_route_id <- paste0(j$toCityId, "-", j$fromCityId)
+      # Cheapest matching product still on sale, not the first data match.
       product <- NULL
       for (p in price_data$passes$discountProducts) {
-        if (!is.null(p$route) && (identical(p$route, route_id) || identical(p$route, reverse_route_id))) {
-          product <- p
-          break
-        }
+        if (is.null(p$route)) next
+        if (!identical(p$route, route_id) && !identical(p$route, reverse_route_id)) next
+        if (!is_on_sale(p$salesEndDate, travel_date)) next
+        if (is.null(product) || p$priceJpy < product$priceJpy) product <- p
       }
       if (!is.null(product)) {
         substitutions <- substitutions + 1
@@ -341,25 +355,40 @@ evaluate_discount_products_option <- function(config, price_data, journeys) {
   list(id = "discount_products", totalJpy = total)
 }
 
+# A withdrawn product cannot be purchased for a later trip (engine/transportOptimizer.ts).
+is_on_sale <- function(sales_end_date, travel_date) {
+  is.null(sales_end_date) || travel_date <= sales_end_date
+}
+
+# A JR pass covers JR services only; private, bus and mixed-operator edges
+# stay in the paid remainder.
+is_jr_covered <- function(journey) identical(journey$record$operator, "jr")
+
 optimize_transport <- function(config, price_data) {
   journeys <- build_journeys(config, price_data)
+  travel_date <- if (is.null(config$timing$startDate)) format(Sys.Date(), "%Y-%m-%d") else config$timing$startDate
 
   point_to_point_total <- if (length(journeys) == 0) 0 else sum(vapply(journeys, function(j) j$fareJpy, numeric(1)))
   options <- list(list(id = "point_to_point", totalJpy = point_to_point_total))
 
   if (length(journeys) > 0) {
+    jr_journeys <- Filter(is_jr_covered, journeys)
+
     for (pass in price_data$passes$nationalPasses) {
       if (!identical(pass$railClass, config$transport$railClass)) next
-      options[[length(options) + 1]] <- evaluate_pass_option(config, journeys, journeys, pass$id, pass$days, pass$priceJpyOfficialChannel, pass$childDiscountPct)
+      if (!is_on_sale(pass$salesEndDate, travel_date)) next
+      options[[length(options) + 1]] <- evaluate_pass_option(config, journeys, jr_journeys, pass$id, pass$days, pass$priceJpyOfficialChannel, pass$childDiscountPct)
     }
 
     for (pass in price_data$passes$regionalPasses) {
-      eligible <- Filter(function(j) (j$fromCityId %in% pass$coverage) && (j$toCityId %in% pass$coverage), journeys)
+      if (!identical(pass$railClass, config$transport$railClass)) next
+      if (!is_on_sale(pass$salesEndDate, travel_date)) next
+      eligible <- Filter(function(j) is_jr_covered(j) && (j$fromCityId %in% pass$coverage) && (j$toCityId %in% pass$coverage), journeys)
       if (length(eligible) == 0) next
       options[[length(options) + 1]] <- evaluate_pass_option(config, journeys, eligible, pass$id, pass$days, pass$priceJpy, pass$childDiscountPct)
     }
 
-    discount_option <- evaluate_discount_products_option(config, price_data, journeys)
+    discount_option <- evaluate_discount_products_option(config, price_data, journeys, travel_date)
     if (!is.null(discount_option)) options[[length(options) + 1]] <- discount_option
   }
 
@@ -482,8 +511,12 @@ compute_shopping <- function(config, price_data) {
   omiyage <- find_price(price_data$prices, function(p) identical(p$id, "omiyage_budget"))
   total <- multiply_by_basis(omiyage$basis, omiyage$expected, people = people)
 
+  # H2 is entered per person and must be multiplied by headcount, like
+  # every other per-person figure (see engine/shopping.ts).
   personal_budget <- config$shopping$personalBudgetJpy
-  if (!is.null(personal_budget) && personal_budget > 0) total <- total + personal_budget
+  if (!is.null(personal_budget) && personal_budget > 0) {
+    total <- total + multiply_by_basis("per_person_per_trip", personal_budget, people = people)
+  }
   total
 }
 
@@ -497,7 +530,13 @@ compute_budget_totals <- function(config, price_data) {
     stop("verify.R requires timing.startDate to be set on every cross-check fixture")
   }
 
-  getting_there <- compute_getting_there(config, price_data)
+  # Departure tax is charged at the rate in force on the day the traveller
+  # leaves Japan: reference date + every night of the itinerary.
+  total_nights <- 0
+  for (leg in config$itinerary$legs) total_nights <- total_nights + leg$nights
+  departure_date <- add_days_iso(reference_date, total_nights)
+
+  getting_there <- compute_getting_there(config, price_data, departure_date)
   lodging <- compute_lodging(config, price_data, reference_date)
   transport <- compute_transport(config, price_data)
   local_transport <- compute_local_transport(config, price_data)

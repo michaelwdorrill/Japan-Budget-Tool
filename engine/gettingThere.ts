@@ -13,11 +13,17 @@ export interface GettingThereResult {
   pointsOpportunityCostUsd: number // display-only, never part of totalJpy (§7)
 }
 
-// A1-A5. Airfare (A1) depends on flight.mode: 'cash' converts the per-person
-// USD estimate to JPY once at this input boundary; 'points' contributes 0
+// A1-A5. Airfare (A1) depends on flight.mode: 'cash' is a purchase the
+// traveller already makes in their home currency; 'points' contributes 0
 // cash cost but still surfaces the opportunity-cost estimate for display;
 // 'exclude' contributes 0 and no opportunity cost.
-export function computeGettingThere(config: TripConfig, priceData: PriceData): GettingThereResult {
+//
+// A1/A2 carry `fixedHomeCurrencyAmount`: a $1,000 ticket stays $1,000. The
+// JPY figures are a presentation convenience at the nominal rate so the
+// line still appears in the JPY ledger, but the uncertainty roll-up must
+// not apply JPY FX movement or a Japan card fee to a purchase already
+// settled at home.
+export function computeGettingThere(config: TripConfig, priceData: PriceData, departureDate: string): GettingThereResult {
   const people = totalPeople(config.party)
   const lineItems: LineItem[] = []
 
@@ -25,38 +31,44 @@ export function computeGettingThere(config: TripConfig, priceData: PriceData): G
     if (config.flight.cashEstimateUsd === undefined) {
       throw new Error('flight.mode is "cash" but flight.cashEstimateUsd is not set')
     }
+    const airfareHomeCurrency = config.flight.cashEstimateUsd * people
     lineItems.push({
       id: 'getting-there-airfare-cash',
-      label: 'International airfare (cash)',
+      label: 'International airfare (cash, fixed in home currency)',
       category: 'getting_there',
       subcategory: 'A1',
       // User-entered estimate, no low/high band of its own.
-      ...exactAmount(usdToJpy(config.flight.cashEstimateUsd, config.money.jpyPerUsd) * people),
+      ...exactAmount(usdToJpy(airfareHomeCurrency, config.money.jpyPerUsd)),
       confidence: 'medium',
+      uncertainty: 'fixed',
+      fixedHomeCurrencyAmount: airfareHomeCurrency,
     })
   }
 
+  const taxesAndFeesHomeCurrency = config.flight.taxesAndFeesUsd * people
   lineItems.push({
     id: 'getting-there-taxes-fees',
-    label: 'Award/ticket taxes, fees, carrier surcharges',
+    label: 'Award/ticket taxes, fees, carrier surcharges (fixed in home currency)',
     category: 'getting_there',
     subcategory: 'A2',
-    ...exactAmount(usdToJpy(config.flight.taxesAndFeesUsd, config.money.jpyPerUsd) * people),
+    ...exactAmount(usdToJpy(taxesAndFeesHomeCurrency, config.money.jpyPerUsd)),
     confidence: 'medium',
+    uncertainty: 'fixed',
+    fixedHomeCurrencyAmount: taxesAndFeesHomeCurrency,
   })
 
-  const departureTaxJpy = departureTax(priceData.taxes, people)
-  if (departureTaxJpy > 0) {
+  const departure = departureTax(priceData.taxes, config.party, departureDate)
+  if (departure.totalTaxJpy > 0) {
     lineItems.push({
       id: 'getting-there-departure-tax',
-      label: priceData.taxes.departureTax.collectedVia === 'airfare'
-        ? 'Japan international tourist departure tax (collected via airfare)'
-        : 'Japan international tourist departure tax',
+      label: `Japan international tourist departure tax (¥${departure.amountJpyPerPerson.toLocaleString('en-US')}/person on ${departureDate})`,
       category: 'getting_there',
       subcategory: 'A3',
-      // A published government fee — exact, not a modeled estimate.
-      ...exactAmount(departureTaxJpy),
-      confidence: priceData.taxes.departureTax.confidence,
+      // A published statutory charge — exact, and never widened by market
+      // volatility in the uncertainty roll-up.
+      ...exactAmount(departure.totalTaxJpy),
+      confidence: 'high',
+      uncertainty: 'fixed',
     })
   }
 

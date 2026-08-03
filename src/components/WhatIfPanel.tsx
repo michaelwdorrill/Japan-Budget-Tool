@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { computeBudget, jpyToUsd, shiftLodgingTier, shiftNights, shiftToNearestShoulderSeason } from '../../engine/index'
+import { computeBudget, jpyToUsd, shiftLodgingTier, shiftNights } from '../../engine/index'
 import { priceData } from '../data'
 import { useTripConfig } from '../state/TripConfigContext'
 import { currencySymbolFor, formatCurrency } from '../currency'
@@ -41,25 +41,12 @@ export function WhatIfPanel({ baselineJpyPerPerson, baselineUsdPerPerson }: { ba
       results.push({ id: 'lodging_tier_down', label: 'One tier down on lodging', deltaUsdPerPerson: null })
     }
 
-    try {
-      const budget = computeBudget(config, priceData)
-      const overlap = budget.seasonOverlaps[0]
-      if (overlap) {
-        const shiftedConfig = shiftToNearestShoulderSeason(config, priceData, overlap.season.startMonthDay, budget.referenceDate)
-        if (shiftedConfig) {
-          const shiftedUsd = jpyToUsd(computeBudget(shiftedConfig, priceData).totalJpyPerPerson, config.money.jpyPerUsd, {
-            cardFxFeePct: config.money.cardFxFeePct,
-          })
-          results.push({ id: 'season_shift', label: 'Shift to the nearest shoulder season', deltaUsdPerPerson: shiftedUsd - baselineUsdPerPerson })
-        } else {
-          results.push({ id: 'season_shift', label: 'Shift to the nearest shoulder season', deltaUsdPerPerson: null })
-        }
-      } else {
-        results.push({ id: 'season_shift', label: 'Shift to the nearest shoulder season', deltaUsdPerPerson: null })
-      }
-    } catch {
-      results.push({ id: 'season_shift', label: 'Shift to the nearest shoulder season', deltaUsdPerPerson: null })
-    }
+    // A season shift used to be priced here, back when the engine
+    // multiplied room rates by a seasonal coefficient. That pricing rule
+    // was wrong and has been removed, so there is no honest delta to show:
+    // travelling in a cheaper window changes what a hotel will quote, not
+    // what an already-quoted room costs. The guidance panel raises the
+    // scarcity warning instead.
 
     return results
   }, [config, baselineUsdPerPerson])

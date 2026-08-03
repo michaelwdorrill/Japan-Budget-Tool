@@ -16,10 +16,23 @@ describe('computeShopping', () => {
     expect(result.lineItems.some((i) => i.subcategory === 'H2')).toBe(false)
   })
 
-  it('includes personal shopping when the user sets a budget', () => {
-    const config = baseTripConfig({ shopping: { personalBudgetJpy: 40000 } })
+  // H2 is entered per person. This previously asserted a party-wide
+  // ¥40,000 for a two-adult party, which froze the understatement bug in
+  // place rather than catching it — the reason the defect survived a
+  // coverage gate. Party-size scaling is now a known-answer table.
+  it.each([
+    [1, 40000],
+    [2, 80000],
+    [5, 200000],
+  ])('scales the per-person shopping budget by party size: %i adults -> ¥%i', (adults, expected) => {
+    const config = baseTripConfig({ party: { adults, children: [], rooms: 1 }, shopping: { personalBudgetJpy: 40000 } })
     const result = computeShopping(config, testPriceData)
-    const line = result.lineItems.find((i) => i.subcategory === 'H2')
-    expect(line?.amountJpy).toBe(40000)
+    expect(result.lineItems.find((i) => i.subcategory === 'H2')?.amountJpy).toBe(expected)
+  })
+
+  it('counts children toward the per-person shopping budget', () => {
+    const config = baseTripConfig({ party: { adults: 2, children: [{ age: 8 }], rooms: 2 }, shopping: { personalBudgetJpy: 10000 } })
+    const result = computeShopping(config, testPriceData)
+    expect(result.lineItems.find((i) => i.subcategory === 'H2')?.amountJpy).toBe(30000)
   })
 })

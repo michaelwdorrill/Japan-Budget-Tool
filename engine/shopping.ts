@@ -1,6 +1,6 @@
 import type { TripConfig } from './trip'
 import type { PriceData } from './priceData'
-import { multiplyByBasisRange, totalPeople } from './basis'
+import { multiplyByBasis, multiplyByBasisRange, totalPeople } from './basis'
 import { findPriceById } from './priceLookup'
 import type { LineItem } from './lineItem'
 import { exactAmount, sumLineItems } from './lineItem'
@@ -21,15 +21,19 @@ export function computeShopping(config: TripConfig, priceData: PriceData): { lin
     confidence: omiyage.confidence,
   })
 
-  const personalBudgetJpy = config.shopping?.personalBudgetJpy ?? 0
-  if (personalBudgetJpy > 0) {
+  // H2 is entered per person (the Money step labels it so), and therefore
+  // must go through the same basis multiplication as every other
+  // per-person figure. Charging it once for the whole party understated
+  // the headline by (party size - 1) x the entered amount.
+  const personalBudgetPerPersonJpy = config.shopping?.personalBudgetJpy ?? 0
+  if (personalBudgetPerPersonJpy > 0) {
     lineItems.push({
       id: 'shopping-personal',
       label: 'Personal shopping budget',
       category: 'shopping',
       subcategory: 'H2',
-      // User-set figure, not a modeled estimate.
-      ...exactAmount(personalBudgetJpy),
+      // User-set figure, not a modeled estimate — exact at every bound.
+      ...exactAmount(multiplyByBasis('per_person_per_trip', personalBudgetPerPersonJpy, { people })),
       confidence: 'high',
     })
   }

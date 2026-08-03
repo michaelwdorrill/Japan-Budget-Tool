@@ -1,5 +1,5 @@
 import type { TripConfig } from './trip'
-import type { NationalPassRecord, PriceData, RailFareRecord, RegionalPassRecord } from './priceData'
+import type { DiscountProductRecord, NationalPassRecord, PriceData, RailFareRecord, RegionalPassRecord } from './priceData'
 import type { CityId } from './ids'
 import { fareEquivalentPeople, multiplyByBasis } from './basis'
 import type { LineItem } from './lineItem'
@@ -33,6 +33,13 @@ interface Journey {
   dayOffset: number // cumulative nights through the leg being departed; the day this journey happens
   record: RailFareRecord
   fareJpy: number // party-wide, fare-equivalent-people-weighted, at the requested rail class
+}
+
+// A product withdrawn from sale cannot be bought for a later trip, so it
+// must not be ranked. `salesEndDate` is the last purchasable date,
+// inclusive; null means still on sale.
+function isOnSale(salesEndDate: string | null, travelDate: string): boolean {
+  return salesEndDate === null || travelDate <= salesEndDate
 }
 
 function findRailFare(railFares: RailFareRecord[], fromCityId: CityId, toCityId: CityId): RailFareRecord {
@@ -208,11 +215,20 @@ function evaluatePassOption(
   }
 }
 
+// A JR pass covers JR services only. Odakyu's Romancecar to Hakone, a
+// Kintetsu line, a highway bus, and any mixed-operator routing stay in the
+// paid remainder — previously every edge was treated as pass-covered, so a
+// pass option could silently make a private fare disappear and look
+// cheaper than it is.
+function isJrCovered(journey: Journey): boolean {
+  return journey.record.operator === 'jr'
+}
+
 function evaluateNationalPassOption(config: TripConfig, journeys: Journey[], pass: NationalPassRecord): TransportOption {
   return evaluatePassOption(
     config,
     journeys,
-    journeys, // every journey is eligible for the national pass
+    journeys.filter(isJrCovered),
     pass.id,
     pass.label,
     pass.days,
@@ -223,7 +239,12 @@ function evaluateNationalPassOption(config: TripConfig, journeys: Journey[], pas
 }
 
 function evaluateRegionalPassOption(config: TripConfig, journeys: Journey[], pass: RegionalPassRecord): TransportOption | null {
-  const eligible = journeys.filter((j) => pass.coverage.includes(j.fromCityId) && pass.coverage.includes(j.toCityId))
+  // Endpoint containment is still a coarse proxy for the real area map, but
+  // operator is now checked: a JR regional pass cannot cover a private or
+  // bus edge that happens to run between two cities inside its region.
+  const eligible = journeys.filter(
+    (j) => isJrCovered(j) && pass.coverage.includes(j.fromCityId) && pass.coverage.includes(j.toCityId),
+  )
   if (eligible.length === 0) return null // this pass's region doesn't touch this itinerary at all
 
   return evaluatePassOption(config, journeys, eligible, pass.id, pass.label, pass.days, pass.priceJpy, pass.childDiscountPct, pass.confidence)
@@ -239,7 +260,12 @@ function discountProductTimePenaltyMinutes(label: string): number {
   return 0
 }
 
-function evaluateDiscountProductsOption(config: TripConfig, priceData: PriceData, journeys: Journey[]): TransportOption | null {
+function evaluateDiscountProductsOption(
+  config: TripConfig,
+  priceData: PriceData,
+  journeys: Journey[],
+  travelDate: string,
+): TransportOption | null {
   const fareEqPeople = fareEquivalentPeople(config.party)
   const lineItems: LineItem[] = []
   let totalJpy = 0
@@ -249,7 +275,14 @@ function evaluateDiscountProductsOption(config: TripConfig, priceData: PriceData
   journeys.forEach((journey, index) => {
     const routeId = `${journey.fromCityId}-${journey.toCityId}`
     const reverseRouteId = `${journey.toCityId}-${journey.fromCityId}`
-    const product = priceData.passes.discountProducts.find((p) => p.route === routeId || p.route === reverseRouteId)
+    // Pick the cheapest matching product, not whichever happens to appear
+    // first in the data file. A ¥10,300 Puratto Kodama used to be selected
+    // over a ¥6,500 highway bus on the same route purely by data order.
+    const product = priceData.passes.discountProducts
+      .filter((p) => (p.route === routeId || p.route === reverseRouteId) && isOnSale(p.salesEndDate, travelDate))
+      .reduce<DiscountProductRecord | null>((cheapest, candidate) => (
+        cheapest === null || candidate.priceJpy < cheapest.priceJpy ? candidate : cheapest
+      ), null)
 
     if (product) {
       substitutions += 1
@@ -297,19 +330,31 @@ export function optimizeTransport(config: TripConfig, priceData: PriceData): Tra
     return { options: [evaluatePointToPointOption(journeys)] }
   }
 
+  // Product validity is judged against the travel date. Without a start
+  // date the trip is undated, so withdrawn products cannot be excluded on
+  // evidence — the conservative choice is to drop them rather than rank a
+  // product that may no longer exist.
+  const travelDate = config.timing.startDate ?? new Date().toISOString().slice(0, 10)
+
   const options: TransportOption[] = [evaluatePointToPointOption(journeys)]
 
   for (const pass of priceData.passes.nationalPasses) {
     if (pass.railClass !== config.transport.railClass) continue
+    if (!isOnSale(pass.salesEndDate, travelDate)) continue
     options.push(evaluateNationalPassOption(config, journeys, pass))
   }
 
   for (const pass of priceData.passes.regionalPasses) {
+    // An ordinary product cannot satisfy a Green-class request. Regional
+    // passes previously carried no class at all, so ordinary products were
+    // offered against Green itineraries.
+    if (pass.railClass !== config.transport.railClass) continue
+    if (!isOnSale(pass.salesEndDate, travelDate)) continue
     const option = evaluateRegionalPassOption(config, journeys, pass)
     if (option) options.push(option)
   }
 
-  const discountOption = evaluateDiscountProductsOption(config, priceData, journeys)
+  const discountOption = evaluateDiscountProductsOption(config, priceData, journeys, travelDate)
   if (discountOption) options.push(discountOption)
 
   options.sort((a, b) => a.totalJpy - b.totalJpy)

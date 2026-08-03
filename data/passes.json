@@ -1,24 +1,300 @@
 {
   "nationalPasses": [
-    { "id": "jr_national_7day_ordinary", "label": "JR Pass, 7 day, ordinary", "days": 7, "railClass": "ordinary", "priceJpyOfficialChannel": 50000, "priceJpyOverseasAgent": 50000, "priceJpyOverseasAgentFrom": { "date": "2026-10-01", "priceJpy": 53000 }, "childDiscountPct": 50, "nozomiMizuhoSupplementJpy": 4960, "asOf": "2026-07-31", "source": "https://www.japanrailpass.net", "confidence": "low", "notes": "Official online channel expected to hold ¥50,000 for a limited, unannounced window past 2026-10-01 per the build spec; verify at purchase time." },
-    { "id": "jr_national_14day_ordinary", "label": "JR Pass, 14 day, ordinary", "days": 14, "railClass": "ordinary", "priceJpyOfficialChannel": 80000, "priceJpyOverseasAgent": 80000, "priceJpyOverseasAgentFrom": { "date": "2026-10-01", "priceJpy": 84000 }, "childDiscountPct": 50, "nozomiMizuhoSupplementJpy": 4960, "asOf": "2026-07-31", "source": "https://www.japanrailpass.net", "confidence": "low" },
-    { "id": "jr_national_21day_ordinary", "label": "JR Pass, 21 day, ordinary", "days": 21, "railClass": "ordinary", "priceJpyOfficialChannel": 100000, "priceJpyOverseasAgent": 100000, "priceJpyOverseasAgentFrom": { "date": "2026-10-01", "priceJpy": 105000 }, "childDiscountPct": 50, "nozomiMizuhoSupplementJpy": 4960, "asOf": "2026-07-31", "source": "https://www.japanrailpass.net", "confidence": "low" },
-    { "id": "jr_national_7day_green", "label": "JR Pass, 7 day, Green Car", "days": 7, "railClass": "green", "priceJpyOfficialChannel": 70000, "priceJpyOverseasAgent": 70000, "priceJpyOverseasAgentFrom": { "date": "2026-10-01", "priceJpy": 74000 }, "childDiscountPct": 50, "nozomiMizuhoSupplementJpy": 4960, "asOf": "2026-07-31", "source": "https://www.japanrailpass.net", "confidence": "low" },
-    { "id": "jr_national_14day_green", "label": "JR Pass, 14 day, Green Car", "days": 14, "railClass": "green", "priceJpyOfficialChannel": 110000, "priceJpyOverseasAgent": 110000, "priceJpyOverseasAgentFrom": { "date": "2026-10-01", "priceJpy": 116000 }, "childDiscountPct": 50, "nozomiMizuhoSupplementJpy": 4960, "asOf": "2026-07-31", "source": "https://www.japanrailpass.net", "confidence": "low", "notes": "Extrapolated from the 7/21-day Green Car steps; not independently sourced. Verify before use." },
-    { "id": "jr_national_21day_green", "label": "JR Pass, 21 day, Green Car", "days": 21, "railClass": "green", "priceJpyOfficialChannel": 140000, "priceJpyOverseasAgent": 140000, "priceJpyOverseasAgentFrom": { "date": "2026-10-01", "priceJpy": 147000 }, "childDiscountPct": 50, "nozomiMizuhoSupplementJpy": 4960, "asOf": "2026-07-31", "source": "https://www.japanrailpass.net", "confidence": "low", "notes": "Extrapolated; not independently sourced. Verify before use." }
+    {
+      "id": "jr_national_7day_ordinary",
+      "label": "JR Pass, 7 day, ordinary",
+      "days": 7,
+      "railClass": "ordinary",
+      "priceJpyOfficialChannel": 50000,
+      "priceJpyOverseasAgent": 50000,
+      "priceJpyOverseasAgentFrom": {
+        "date": "2026-10-01",
+        "priceJpy": 53000
+      },
+      "childDiscountPct": 50,
+      "nozomiMizuhoSupplementJpy": 4960,
+      "asOf": "2026-07-31",
+      "source": "https://www.japanrailpass.net",
+      "confidence": "low",
+      "notes": "Official online channel expected to hold ¥50,000 for a limited, unannounced window past 2026-10-01 per the build spec; verify at purchase time.",
+      "salesEndDate": null
+    },
+    {
+      "id": "jr_national_14day_ordinary",
+      "label": "JR Pass, 14 day, ordinary",
+      "days": 14,
+      "railClass": "ordinary",
+      "priceJpyOfficialChannel": 80000,
+      "priceJpyOverseasAgent": 80000,
+      "priceJpyOverseasAgentFrom": {
+        "date": "2026-10-01",
+        "priceJpy": 84000
+      },
+      "childDiscountPct": 50,
+      "nozomiMizuhoSupplementJpy": 4960,
+      "asOf": "2026-07-31",
+      "source": "https://www.japanrailpass.net",
+      "confidence": "low",
+      "salesEndDate": null
+    },
+    {
+      "id": "jr_national_21day_ordinary",
+      "label": "JR Pass, 21 day, ordinary",
+      "days": 21,
+      "railClass": "ordinary",
+      "priceJpyOfficialChannel": 100000,
+      "priceJpyOverseasAgent": 100000,
+      "priceJpyOverseasAgentFrom": {
+        "date": "2026-10-01",
+        "priceJpy": 105000
+      },
+      "childDiscountPct": 50,
+      "nozomiMizuhoSupplementJpy": 4960,
+      "asOf": "2026-07-31",
+      "source": "https://www.japanrailpass.net",
+      "confidence": "low",
+      "salesEndDate": null
+    },
+    {
+      "id": "jr_national_7day_green",
+      "label": "JR Pass, 7 day, Green Car",
+      "days": 7,
+      "railClass": "green",
+      "priceJpyOfficialChannel": 70000,
+      "priceJpyOverseasAgent": 70000,
+      "priceJpyOverseasAgentFrom": {
+        "date": "2026-10-01",
+        "priceJpy": 74000
+      },
+      "childDiscountPct": 50,
+      "nozomiMizuhoSupplementJpy": 4960,
+      "asOf": "2026-07-31",
+      "source": "https://www.japanrailpass.net",
+      "confidence": "low",
+      "salesEndDate": null
+    },
+    {
+      "id": "jr_national_14day_green",
+      "label": "JR Pass, 14 day, Green Car",
+      "days": 14,
+      "railClass": "green",
+      "priceJpyOfficialChannel": 110000,
+      "priceJpyOverseasAgent": 110000,
+      "priceJpyOverseasAgentFrom": {
+        "date": "2026-10-01",
+        "priceJpy": 116000
+      },
+      "childDiscountPct": 50,
+      "nozomiMizuhoSupplementJpy": 4960,
+      "asOf": "2026-07-31",
+      "source": "https://www.japanrailpass.net",
+      "confidence": "low",
+      "notes": "Extrapolated from the 7/21-day Green Car steps; not independently sourced. Verify before use.",
+      "salesEndDate": null
+    },
+    {
+      "id": "jr_national_21day_green",
+      "label": "JR Pass, 21 day, Green Car",
+      "days": 21,
+      "railClass": "green",
+      "priceJpyOfficialChannel": 140000,
+      "priceJpyOverseasAgent": 140000,
+      "priceJpyOverseasAgentFrom": {
+        "date": "2026-10-01",
+        "priceJpy": 147000
+      },
+      "childDiscountPct": 50,
+      "nozomiMizuhoSupplementJpy": 4960,
+      "asOf": "2026-07-31",
+      "source": "https://www.japanrailpass.net",
+      "confidence": "low",
+      "notes": "Extrapolated; not independently sourced. Verify before use.",
+      "salesEndDate": null
+    }
   ],
   "regionalPasses": [
-    { "id": "jr_east_nagano_niigata_5day", "label": "JR East Nagano-Niigata Area Pass, 5 flexible days", "operator": "JR East", "coverage": ["tokyo", "kanazawa"], "days": 5, "priceJpy": 27000, "childDiscountPct": 50, "asOf": "2026-07-31", "source": "https://www.jreast.co.jp/e/", "confidence": "low" },
-    { "id": "jr_west_kansai_hiroshima_5day", "label": "JR West Kansai-Hiroshima Area Pass, 5 consecutive days", "operator": "JR West", "coverage": ["osaka", "kyoto", "hiroshima"], "days": 5, "priceJpy": 19000, "childDiscountPct": 50, "asOf": "2026-07-31", "source": "https://www.westjr.co.jp/global/en/", "confidence": "low" },
-    { "id": "jr_west_sanyo_sanin_7day", "label": "JR West Sanyo-San'in Area Pass, 7 consecutive days", "operator": "JR West", "coverage": ["osaka", "kyoto", "hiroshima"], "days": 7, "priceJpy": 20000, "childDiscountPct": 50, "asOf": "2026-07-31", "source": "https://www.westjr.co.jp/global/en/", "confidence": "low" },
-    { "id": "jr_central_takayama_hokuriku_5day", "label": "JR Central Takayama-Hokuriku Area Tourist Pass, 5 consecutive days", "operator": "JR Central", "coverage": ["kanazawa", "takayama"], "days": 5, "priceJpy": 19000, "childDiscountPct": 50, "asOf": "2026-07-31", "source": "https://touristpass.jp", "confidence": "low" },
-    { "id": "jr_kyushu_north_3day", "label": "JR Kyushu Rail Pass, North Kyushu, 3 flexible days", "operator": "JR Kyushu", "coverage": [], "days": 3, "priceJpy": 12000, "childDiscountPct": 50, "asOf": "2026-07-31", "source": "https://www.jrkyushu.co.jp/english/", "confidence": "low", "notes": "No modeled city in the 8-city seed set falls in JR Kyushu territory yet; included for future itinerary coverage." },
-    { "id": "jr_hokkaido_flexible_4day", "label": "JR Hokkaido Rail Pass, 4 flexible days", "operator": "JR Hokkaido", "coverage": [], "days": 4, "priceJpy": 27000, "childDiscountPct": 50, "asOf": "2026-07-31", "source": "https://www.jrhokkaido.co.jp/global/english/", "confidence": "low", "notes": "No modeled city in the 8-city seed set falls in JR Hokkaido territory yet; included for future itinerary coverage." }
+    {
+      "id": "jr_east_nagano_niigata_5day",
+      "label": "JR East Nagano-Niigata Area Pass, 5 flexible days",
+      "operator": "JR East",
+      "coverage": [
+        "tokyo",
+        "kanazawa"
+      ],
+      "days": 5,
+      "priceJpy": 27000,
+      "childDiscountPct": 50,
+      "asOf": "2026-08-02",
+      "source": "https://www.jreast.co.jp/e/press/pdf/0128_pass_en.pdf",
+      "confidence": "high",
+      "railClass": "ordinary",
+      "salesEndDate": "2026-03-13",
+      "notes": "Withdrawn: sales ended 2026-03-13, replaced by the JR EAST PASS 5/10-day products. Retained so travel dated before the cut-off still prices correctly; it can no longer be selected for later travel."
+    },
+    {
+      "id": "jr_west_kansai_hiroshima_5day",
+      "label": "JR West Kansai-Hiroshima Area Pass, 5 consecutive days",
+      "operator": "JR West",
+      "coverage": [
+        "osaka",
+        "kyoto",
+        "hiroshima"
+      ],
+      "days": 5,
+      "priceJpy": 17000,
+      "childDiscountPct": 50,
+      "asOf": "2026-08-02",
+      "source": "https://www.westjr.co.jp/global/en/ticket/pass/kansai_hiroshima/",
+      "confidence": "high",
+      "railClass": "ordinary",
+      "salesEndDate": null
+    },
+    {
+      "id": "jr_west_sanyo_sanin_7day",
+      "label": "JR West Sanyo-San'in Area Pass, 7 consecutive days",
+      "operator": "JR West",
+      "coverage": [
+        "osaka",
+        "kyoto",
+        "hiroshima"
+      ],
+      "days": 7,
+      "priceJpy": 23000,
+      "childDiscountPct": 50,
+      "asOf": "2026-08-02",
+      "source": "https://www.westjr.co.jp/global/en/ticket/pass/sanyo_sanin/",
+      "confidence": "high",
+      "railClass": "ordinary",
+      "salesEndDate": null
+    },
+    {
+      "id": "jr_central_takayama_hokuriku_5day",
+      "label": "JR Central Takayama-Hokuriku Area Tourist Pass, 5 consecutive days",
+      "operator": "JR Central",
+      "coverage": [
+        "kanazawa",
+        "takayama"
+      ],
+      "days": 5,
+      "priceJpy": 19800,
+      "childDiscountPct": 50,
+      "asOf": "2026-08-02",
+      "source": "https://touristpass.jp/en/takayama_hokuriku/",
+      "confidence": "high",
+      "railClass": "ordinary",
+      "salesEndDate": null
+    },
+    {
+      "id": "jr_kyushu_north_3day",
+      "label": "JR Kyushu Rail Pass, North Kyushu, 3 flexible days",
+      "operator": "JR Kyushu",
+      "coverage": [],
+      "days": 3,
+      "priceJpy": 14000,
+      "childDiscountPct": 50,
+      "asOf": "2026-08-02",
+      "source": "https://www.jrkyushu.co.jp/english/kyushurailpass/",
+      "confidence": "high",
+      "notes": "Y14,000 online; Y15,000 through an agency or ticket office. The engine prices the online channel. The former Y12,000 figure was the Southern Kyushu agency-office price, a different product.",
+      "railClass": "ordinary",
+      "salesEndDate": null
+    },
+    {
+      "id": "jr_hokkaido_5day",
+      "label": "Hokkaido Rail Pass, 5 consecutive days",
+      "operator": "JR Hokkaido",
+      "coverage": [],
+      "days": 5,
+      "priceJpy": 22000,
+      "railClass": "ordinary",
+      "childDiscountPct": 50,
+      "salesEndDate": null,
+      "asOf": "2026-08-02",
+      "source": "https://www.jrhokkaido.co.jp/global/english/ticket/railpass/index.html",
+      "confidence": "high",
+      "notes": "Replaces a seeded \"4 flexible days\" record that does not correspond to a real product. Coverage is empty because no Hokkaido city is modeled, so it cannot be selected for any current itinerary."
+    },
+    {
+      "id": "jr_east_pass_5day",
+      "label": "JR EAST PASS, 5 days",
+      "operator": "JR East",
+      "coverage": [
+        "tokyo",
+        "kanazawa"
+      ],
+      "days": 5,
+      "priceJpy": 35000,
+      "railClass": "ordinary",
+      "childDiscountPct": 50,
+      "salesEndDate": null,
+      "asOf": "2026-08-02",
+      "source": "https://www.jreast.co.jp/e/press/pdf/0128_pass_en.pdf",
+      "confidence": "high",
+      "notes": "Replaced the withdrawn Tohoku-area and Nagano/Niigata-area passes from 2026-03-14. Coverage here is coarse - confirm the exact area map against the official product page before relying on it."
+    },
+    {
+      "id": "jr_east_pass_10day",
+      "label": "JR EAST PASS, 10 days",
+      "operator": "JR East",
+      "coverage": [
+        "tokyo",
+        "kanazawa"
+      ],
+      "days": 10,
+      "priceJpy": 50000,
+      "railClass": "ordinary",
+      "childDiscountPct": 50,
+      "salesEndDate": null,
+      "asOf": "2026-08-02",
+      "source": "https://www.jreast.co.jp/e/press/pdf/0128_pass_en.pdf",
+      "confidence": "high",
+      "notes": "Replaced the withdrawn Tohoku-area and Nagano/Niigata-area passes from 2026-03-14. Coverage here is coarse - confirm the exact area map against the official product page before relying on it."
+    }
   ],
   "discountProducts": [
-    { "id": "puratto_kodama_tokyo_kyoto", "label": "Puratto Kodama, Tokyo-Kyoto (Kodama shinkansen, discounted)", "route": "tokyo-kyoto", "priceJpy": 10300, "notes": "Slower Kodama-only shinkansen; includes a drink coupon. Not a JR Pass product; booked separately.", "asOf": "2026-07-31", "source": "https://www.jrtours.co.jp", "confidence": "low" },
-    { "id": "seishun_18kippu", "label": "Seishun 18 Kippu, 5 flexible days, local trains only", "route": null, "priceJpy": 12050, "notes": "Seasonal (spring/summer/winter windows only); local and rapid trains only, no shinkansen or limited express. Poor fit for a tight itinerary.", "asOf": "2026-07-31", "source": "https://www.jreast.co.jp", "confidence": "low" },
-    { "id": "highway_bus_tokyo_kyoto", "label": "Overnight highway bus, Tokyo-Kyoto", "route": "tokyo-kyoto", "priceJpy": 6500, "notes": "Wide price range (¥3,000-¥12,000) depending on operator and seat class; saves a hotel night but costs ~8 hours.", "asOf": "2026-07-31", "source": "https://willerexpress.com", "confidence": "low" },
-    { "id": "overnight_bus_tokyo_osaka", "label": "Overnight highway bus, Tokyo-Osaka", "route": "tokyo-osaka", "priceJpy": 7000, "notes": "Wide price range depending on operator and seat class.", "asOf": "2026-07-31", "source": "https://willerexpress.com", "confidence": "low" }
+    {
+      "id": "puratto_kodama_tokyo_kyoto",
+      "label": "Puratto Kodama, Tokyo-Kyoto (Kodama shinkansen, discounted)",
+      "route": "tokyo-kyoto",
+      "priceJpy": 10300,
+      "notes": "Slower Kodama-only shinkansen; includes a drink coupon. Not a JR Pass product; booked separately.",
+      "asOf": "2026-07-31",
+      "source": "https://www.jrtours.co.jp",
+      "confidence": "low",
+      "salesEndDate": null
+    },
+    {
+      "id": "seishun_18kippu",
+      "label": "Seishun 18 Kippu, 5 flexible days, local trains only",
+      "route": null,
+      "priceJpy": 12050,
+      "notes": "Seasonal (spring/summer/winter windows only); local and rapid trains only, no shinkansen or limited express. Poor fit for a tight itinerary.",
+      "asOf": "2026-07-31",
+      "source": "https://www.jreast.co.jp",
+      "confidence": "low",
+      "salesEndDate": null
+    },
+    {
+      "id": "highway_bus_tokyo_kyoto",
+      "label": "Overnight highway bus, Tokyo-Kyoto",
+      "route": "tokyo-kyoto",
+      "priceJpy": 6500,
+      "notes": "Wide price range (¥3,000-¥12,000) depending on operator and seat class; saves a hotel night but costs ~8 hours.",
+      "asOf": "2026-07-31",
+      "source": "https://willerexpress.com",
+      "confidence": "low",
+      "salesEndDate": null
+    },
+    {
+      "id": "overnight_bus_tokyo_osaka",
+      "label": "Overnight highway bus, Tokyo-Osaka",
+      "route": "tokyo-osaka",
+      "priceJpy": 7000,
+      "notes": "Wide price range depending on operator and seat class.",
+      "asOf": "2026-07-31",
+      "source": "https://willerexpress.com",
+      "confidence": "low",
+      "salesEndDate": null
+    }
   ]
 }

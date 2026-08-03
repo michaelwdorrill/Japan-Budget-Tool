@@ -2,37 +2,47 @@ import type { Leg, TripConfig } from './trip'
 import type { PriceData } from './priceData'
 import type { SeasonRecord } from './priceData'
 import { multiplyByBasisRange, totalPeople } from './basis'
-import { lodgingTax } from './tax'
+import { lodgingTax, type BracketEdgeWarning } from './tax'
 import { findPrice } from './priceLookup'
-import { findOverlappingSeason, legStartDates } from './dateUtils'
+import { findOverlappingSeasons, legNightDates, legStartDates } from './dateUtils'
 import type { LineItem } from './lineItem'
 import { sumLineItems } from './lineItem'
 
 export interface LegLodgingResult {
   lineItems: LineItem[]
-  bracketEdgeWarning: ReturnType<typeof lodgingTax>['bracketEdgeWarning']
-  overlappingSeason: SeasonRecord | null
+  bracketEdgeWarning: BracketEdgeWarning | null
+  overlappingSeasons: SeasonRecord[]
 }
 
 function nightlyRatePerPerson(roomCostJpy: number, nights: number, people: number): number {
   return nights > 0 && people > 0 ? Math.round(roomCostJpy / (nights * people)) : 0
 }
 
-// §5.1: seasonal lodging multipliers are large (1.4x-2.2x) and availability
-// collapses during peak windows. Applied to the room rate's low/expected/high
-// alike, using the season's own multiplier band at each bound (low bound *
-// the season's low multiplier, etc.) rather than a single flat factor.
-function applySeasonMultiplier(
-  roomRange: { lowJpy: number; amountJpy: number; highJpy: number },
-  season: SeasonRecord | null,
-): { lowJpy: number; amountJpy: number; highJpy: number } {
-  if (!season) return roomRange
-  const midMultiplier = (season.lodgingMultiplierLow + season.lodgingMultiplierHigh) / 2
-  return {
-    lowJpy: Math.round(roomRange.lowJpy * season.lodgingMultiplierLow),
-    amountJpy: Math.round(roomRange.amountJpy * midMultiplier),
-    highJpy: Math.round(roomRange.highJpy * season.lodgingMultiplierHigh),
+// Accommodation tax is a per-night, per-person statutory charge, and the
+// applicable schedule is the one in force on *that night* — a stay that
+// straddles an effective date pays the old rate before it and the new rate
+// after. Freezing one reference date for the whole leg silently mispriced
+// every trip crossing a rule change.
+//
+// Returns the tax summed across the leg's nights plus the first
+// bracket-edge warning encountered, so the tax-cliff warning still surfaces.
+function taxAcrossNights(
+  priceData: PriceData,
+  leg: Leg,
+  legStartDate: string,
+  nightlyRateJpy: number,
+  people: number,
+): { totalTaxJpy: number; bracketEdgeWarning: BracketEdgeWarning | null } {
+  let totalTaxJpy = 0
+  let bracketEdgeWarning: BracketEdgeWarning | null = null
+
+  for (const nightDate of legNightDates(legStartDate, leg.nights)) {
+    const result = lodgingTax(priceData.taxes, leg.cityId, nightlyRateJpy, 1, people, nightDate)
+    totalTaxJpy += result.totalTaxJpy
+    if (!bracketEdgeWarning && result.bracketEdgeWarning) bracketEdgeWarning = result.bracketEdgeWarning
   }
+
+  return { totalTaxJpy, bracketEdgeWarning }
 }
 
 // B1 (room/bed cost) + B2 (municipal accommodation tax). B3 (a distinct
@@ -44,8 +54,8 @@ export function legLodgingCost(
   leg: Leg,
   party: TripConfig['party'],
   priceData: PriceData,
-  referenceDate: string,
   legStartDate: string,
+  legIndex: number,
 ): LegLodgingResult {
   const people = totalPeople(party)
   const record = findPrice(
@@ -54,43 +64,48 @@ export function legLodgingCost(
     `lodging tier "${leg.lodgingTier}" in city "${leg.cityId}"`,
   )
 
-  const baseRoomRange = multiplyByBasisRange(record.basis, record, { people, rooms: party.rooms, nights: leg.nights })
-  const overlappingSeason = findOverlappingSeason(legStartDate, leg.nights, priceData.seasons)
-  const roomRange = applySeasonMultiplier(baseRoomRange, overlappingSeason)
+  // The room rate is exactly what the price record says. A season window
+  // overlapping this leg produces a warning (see findOverlappingSeasons),
+  // never a multiplier: peak demand is a reason to re-quote a specific
+  // night or book early, not a coefficient to apply to unrelated nights.
+  // The previous behaviour repriced an entire leg when a single night
+  // touched a peak window.
+  const roomRange = multiplyByBasisRange(record.basis, record, { people, rooms: party.rooms, nights: leg.nights })
+  const overlappingSeasons = findOverlappingSeasons(legStartDate, leg.nights, priceData.seasons)
 
   // The tax bracket a rate falls into can differ at the low/expected/high
   // room cost (this is exactly the bracket-cliff risk §3.2 warns about), so
-  // each bound is computed by re-running lodgingTax at that bound's own
-  // nightly rate rather than scaling a single expected-rate tax figure.
-  const taxAtExpected = lodgingTax(
-    priceData.taxes,
-    leg.cityId,
+  // each bound is computed at that bound's own nightly rate rather than
+  // scaling a single expected-rate tax figure.
+  const taxAtExpected = taxAcrossNights(
+    priceData,
+    leg,
+    legStartDate,
     nightlyRatePerPerson(roomRange.amountJpy, leg.nights, people),
-    leg.nights,
     people,
-    referenceDate,
   )
-  const taxLowJpy = lodgingTax(
-    priceData.taxes,
-    leg.cityId,
+  const taxLowJpy = taxAcrossNights(
+    priceData,
+    leg,
+    legStartDate,
     nightlyRatePerPerson(roomRange.lowJpy, leg.nights, people),
-    leg.nights,
     people,
-    referenceDate,
   ).totalTaxJpy
-  const taxHighJpy = lodgingTax(
-    priceData.taxes,
-    leg.cityId,
+  const taxHighJpy = taxAcrossNights(
+    priceData,
+    leg,
+    legStartDate,
     nightlyRatePerPerson(roomRange.highJpy, leg.nights, people),
-    leg.nights,
     people,
-    referenceDate,
   ).totalTaxJpy
 
+  // The leg index is part of every id: a trip that returns to a city it
+  // already visited would otherwise emit duplicate line-item ids, breaking
+  // React keys, CSV exports, and any reconciliation keyed by id.
   const lineItems: LineItem[] = [
     {
-      id: `lodging-room-${leg.cityId}-${record.id}`,
-      label: overlappingSeason ? `${record.label} (${overlappingSeason.label} pricing)` : record.label,
+      id: `lodging-room-${legIndex}-${leg.cityId}-${record.id}`,
+      label: record.label,
       category: 'lodging',
       subcategory: 'B1',
       cityId: leg.cityId,
@@ -101,7 +116,7 @@ export function legLodgingCost(
 
   if (taxAtExpected.totalTaxJpy > 0 || taxLowJpy > 0 || taxHighJpy > 0) {
     lineItems.push({
-      id: `lodging-tax-${leg.cityId}`,
+      id: `lodging-tax-${legIndex}-${leg.cityId}`,
       label: `Municipal accommodation tax, ${leg.cityId}`,
       category: 'lodging',
       subcategory: 'B2',
@@ -109,17 +124,22 @@ export function legLodgingCost(
       lowJpy: Math.min(taxLowJpy, taxHighJpy),
       amountJpy: taxAtExpected.totalTaxJpy,
       highJpy: Math.max(taxLowJpy, taxHighJpy),
-      confidence: 'medium',
+      confidence: 'high',
+      // A statutory charge. It varies with the room rate (hence the band),
+      // but it must not be shocked by the shared lodging market factor in
+      // the Monte Carlo roll-up: the tax schedule does not move when hotel
+      // prices move.
+      uncertainty: 'fixed',
     })
   }
 
-  return { lineItems, bracketEdgeWarning: taxAtExpected.bracketEdgeWarning, overlappingSeason }
+  return { lineItems, bracketEdgeWarning: taxAtExpected.bracketEdgeWarning, overlappingSeasons }
 }
 
 export interface LodgingResult {
   lineItems: LineItem[]
   totalJpy: number
-  bracketEdgeWarnings: Array<{ cityId: string; warning: NonNullable<ReturnType<typeof lodgingTax>['bracketEdgeWarning']> }>
+  bracketEdgeWarnings: Array<{ cityId: string; warning: BracketEdgeWarning }>
   seasonOverlaps: Array<{ cityId: string; legIndex: number; season: SeasonRecord }>
 }
 
@@ -130,13 +150,13 @@ export function computeLodging(config: TripConfig, priceData: PriceData, referen
   const starts = legStartDates(referenceDate, config.itinerary.legs)
 
   config.itinerary.legs.forEach((leg, index) => {
-    const result = legLodgingCost(leg, config.party, priceData, referenceDate, starts[index])
+    const result = legLodgingCost(leg, config.party, priceData, starts[index], index)
     lineItems.push(...result.lineItems)
     if (result.bracketEdgeWarning) {
       bracketEdgeWarnings.push({ cityId: leg.cityId, warning: result.bracketEdgeWarning })
     }
-    if (result.overlappingSeason) {
-      seasonOverlaps.push({ cityId: leg.cityId, legIndex: index, season: result.overlappingSeason })
+    for (const season of result.overlappingSeasons) {
+      seasonOverlaps.push({ cityId: leg.cityId, legIndex: index, season })
     }
   })
 
