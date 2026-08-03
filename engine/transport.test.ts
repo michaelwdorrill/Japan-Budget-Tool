@@ -183,7 +183,9 @@ describe('computeTransport', () => {
     const result = computeTransport(config, testPriceData)
     // A single short journey never beats a ¥50,000 pass; the fixture's discount
     // product (¥10,000) undercuts even the plain point-to-point fare (¥14,000).
-    expect(result.totalJpy).toBe(10000)
+    // ¥6,500 bus, not the ¥10,000 Kodama that merely appears first in the
+    // fixture — the optimizer now picks the cheapest valid substitution.
+    expect(result.totalJpy).toBe(6500)
     expect(result.options[0].id).toBe('discount_products')
   })
 

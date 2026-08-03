@@ -4,17 +4,17 @@ import { priceData } from '../data'
 import { useTripConfig } from '../state/TripConfigContext'
 
 // §5.2/§5.3: a non-blocking guidance panel — advisory only, never gates
-// the running total. Runs off the deterministic budget on every config
-// change (cheap); the season-shift P80 counterfactual is skipped here
-// since it costs two 10,000-trial Monte Carlo runs (see the CLI for the
-// full version, budget-cli.ts).
+// the running total. Every rule runs off the deterministic budget on each
+// config change. The full rule set is shown here, including the seasonal
+// scarcity warning: it no longer runs a Monte Carlo simulation, so there
+// is nothing expensive left to hold back from the UI.
 export function GuidancePanel() {
   const { config } = useTripConfig()
 
   const messages = useMemo(() => {
     try {
       const budget = computeBudget(config, priceData)
-      return computeGuidance(config, priceData, budget, { includeSeasonShiftCounterfactual: false })
+      return computeGuidance(config, priceData, budget)
     } catch {
       return []
     }

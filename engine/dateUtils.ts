@@ -57,15 +57,30 @@ function isMonthDayInWindow(monthDay: string, startMonthDay: string, endMonthDay
   return monthDay >= startMonthDay || monthDay <= endMonthDay
 }
 
-// A leg "overlaps" a season if any night it's actually in-country falls
-// inside that season's window (checking only the start date would miss a
-// leg that begins just before, say, Golden Week and runs into it).
-export function findOverlappingSeason(legStartDate: string, nights: number, seasons: SeasonRecord[]): SeasonRecord | null {
-  const nightsToCheck = Math.max(nights, 1)
-  for (let i = 0; i < nightsToCheck; i++) {
-    const monthDay = monthDayOf(addDaysToIsoDate(legStartDate, i))
-    const match = seasons.find((s) => isMonthDayInWindow(monthDay, s.startMonthDay, s.endMonthDay))
-    if (match) return match
+// The dates of each night in a leg, so callers can evaluate a per-night
+// rule (an accommodation-tax schedule, a seasonal warning) on the night it
+// actually applies to instead of freezing one date for the whole stay.
+export function legNightDates(legStartDate: string, nights: number): string[] {
+  return Array.from({ length: Math.max(nights, 0) }, (_, i) => addDaysToIsoDate(legStartDate, i))
+}
+
+// Every distinct season any night of the leg falls into. A leg can touch
+// more than one window (a stay spanning late April runs through both the
+// tail of cherry blossom and the start of Golden Week), and reporting only
+// the first would hide the second from the guidance layer.
+//
+// This drives *warnings only*. Seasons deliberately do not multiply a room
+// rate: peak demand is a reason to re-quote a specific night's hotel or to
+// book early, not a coefficient to apply to unrelated nights.
+export function findOverlappingSeasons(legStartDate: string, nights: number, seasons: SeasonRecord[]): SeasonRecord[] {
+  const found: SeasonRecord[] = []
+  for (const date of legNightDates(legStartDate, Math.max(nights, 1))) {
+    const monthDay = monthDayOf(date)
+    for (const season of seasons) {
+      if (isMonthDayInWindow(monthDay, season.startMonthDay, season.endMonthDay) && !found.includes(season)) {
+        found.push(season)
+      }
+    }
   }
-  return null
+  return found
 }

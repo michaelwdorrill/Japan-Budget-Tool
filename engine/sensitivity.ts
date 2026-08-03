@@ -3,6 +3,8 @@ import type { PriceData } from './priceData'
 import type { Tier } from './price'
 import type { ActivityTier } from './trip'
 import { computeBudget } from './budget'
+import { totalPeople } from './basis'
+import { jpyToUsd } from './money'
 
 // §3.4: for each input, recompute the total with it moved one notch up and
 // one notch down, holding everything else fixed. Cheap and high-value —
@@ -14,7 +16,17 @@ export interface SensitivityFactor {
   baselineJpyPerPerson: number
   lowJpyPerPerson: number
   highJpyPerPerson: number
-  impactJpyPerPerson: number // abs(high - low); tornado chart sort key
+  impactJpyPerPerson: number // abs(high - low), JPY ledger view
+
+  // The same comparison measured in the traveller's home currency, which
+  // is the unit the headline is displayed in. This is the tornado chart's
+  // sort key: measured in JPY, moving the FX rate is mechanically zero
+  // impact, so the chart used to tell the user FX does not matter while
+  // the displayed budget visibly moved.
+  baselineHomePerPerson: number
+  lowHomePerPerson: number
+  highHomePerPerson: number
+  impactHomePerPerson: number
 }
 
 const LODGING_TIER_LADDER: Tier[] = ['hostel', 'business', 'midrange', 'upscale', 'luxury']
@@ -114,8 +126,25 @@ function shiftActivityTier(config: TripConfig, delta: number): TripConfig {
   return next
 }
 
-function totalPerPersonJpy(config: TripConfig, priceData: PriceData): number {
-  return computeBudget(config, priceData).totalJpyPerPerson
+interface PerPersonTotals {
+  jpy: number
+  home: number
+}
+
+// Both units for one config. The home-currency figure keeps purchases
+// already fixed in the home currency out of the FX conversion, matching
+// how the headline and the Monte Carlo roll-up present the total, and uses
+// *this* config's own FX rate so shifting the rate is a real movement.
+function totalsPerPerson(config: TripConfig, priceData: PriceData): PerPersonTotals {
+  const budget = computeBudget(config, priceData)
+  const people = totalPeople(config.party)
+  const divisor = people > 0 ? people : 1
+
+  const home =
+    budget.fixedHomeCurrencyParty / divisor +
+    jpyToUsd(budget.jpyLedgerParty / divisor, config.money.jpyPerUsd, { cardFxFeePct: config.money.cardFxFeePct })
+
+  return { jpy: budget.totalJpyPerPerson, home }
 }
 
 // Expected rough ordering per §3.4: nights -> lodging tier -> party size ->
@@ -124,7 +153,7 @@ function totalPerPersonJpy(config: TripConfig, priceData: PriceData): number {
 // each factor's actual impact on this trip and sorts descending, so the
 // ordering is real data, not a fixed script.
 export function computeSensitivity(config: TripConfig, priceData: PriceData): SensitivityFactor[] {
-  const baseline = totalPerPersonJpy(config, priceData)
+  const baseline = totalsPerPerson(config, priceData)
 
   const factors: Array<{ id: string; label: string; a: TripConfig; b: TripConfig }> = [
     { id: 'nights', label: 'Trip length (nights)', a: shiftNights(config, -1), b: shiftNights(config, 1) },
@@ -143,19 +172,26 @@ export function computeSensitivity(config: TripConfig, priceData: PriceData): Se
   ]
 
   const results = factors.map(({ id, label, a, b }) => {
-    const totalA = totalPerPersonJpy(a, priceData)
-    const totalB = totalPerPersonJpy(b, priceData)
-    const lowJpyPerPerson = Math.min(totalA, totalB)
-    const highJpyPerPerson = Math.max(totalA, totalB)
+    const totalA = totalsPerPerson(a, priceData)
+    const totalB = totalsPerPerson(b, priceData)
+    const lowJpyPerPerson = Math.min(totalA.jpy, totalB.jpy)
+    const highJpyPerPerson = Math.max(totalA.jpy, totalB.jpy)
+    const lowHomePerPerson = Math.min(totalA.home, totalB.home)
+    const highHomePerPerson = Math.max(totalA.home, totalB.home)
     return {
       id,
       label,
-      baselineJpyPerPerson: baseline,
+      baselineJpyPerPerson: baseline.jpy,
       lowJpyPerPerson,
       highJpyPerPerson,
       impactJpyPerPerson: highJpyPerPerson - lowJpyPerPerson,
+      baselineHomePerPerson: baseline.home,
+      lowHomePerPerson,
+      highHomePerPerson,
+      impactHomePerPerson: highHomePerPerson - lowHomePerPerson,
     }
   })
 
-  return results.sort((x, y) => y.impactJpyPerPerson - x.impactJpyPerPerson)
+  // Sorted by home-currency impact: the unit the headline is shown in.
+  return results.sort((x, y) => y.impactHomePerPerson - x.impactHomePerPerson)
 }

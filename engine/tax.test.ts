@@ -59,7 +59,55 @@ describe('lodgingTax', () => {
 })
 
 describe('departureTax', () => {
-  it('multiplies the flat departure tax by headcount', () => {
-    expect(departureTax(testPriceData.taxes, 3)).toBe(9000)
+  const party = (adults: number, children: { age: number }[] = []) => ({ adults, children })
+
+  it('multiplies the applicable rate by chargeable headcount', () => {
+    expect(departureTax(testPriceData.taxes, party(3), '2026-09-10').totalTaxJpy).toBe(9000)
+  })
+
+  it('picks the schedule in force on the departure date', () => {
+    expect(departureTax(testPriceData.taxes, party(1), '2026-06-30').amountJpyPerPerson).toBe(1000)
+    expect(departureTax(testPriceData.taxes, party(1), '2026-07-01').amountJpyPerPerson).toBe(3000)
+  })
+
+  it('exempts children under the record exemption age', () => {
+    const result = departureTax(testPriceData.taxes, party(2, [{ age: 1 }, { age: 2 }]), '2026-09-10')
+    expect(result.chargeablePeople).toBe(3)
+    expect(result.totalTaxJpy).toBe(9000)
+  })
+
+  it('returns zero when no schedule covers the date', () => {
+    const result = departureTax(testPriceData.taxes, party(2), '2000-01-01')
+    expect(result.totalTaxJpy).toBe(0)
+    expect(result.recordId).toBeNull()
+  })
+})
+
+// Regression: `effectiveTo` is inclusive. Treating it as exclusive left a
+// one-day hole on the boundary date where no record matched and the city
+// silently charged zero.
+describe('accommodation tax schedule boundaries', () => {
+  it('charges the outgoing rule on its final day, not zero', () => {
+    // testville_before ends 2026-06-14; testville_after starts 2026-06-15.
+    expect(lodgingTax(testPriceData.taxes, 'testville', 10000, 1, 1, '2026-06-14').taxJpyPerPersonPerNight).toBe(100)
+  })
+
+  it('charges the incoming rule from its first day', () => {
+    expect(lodgingTax(testPriceData.taxes, 'testville', 10000, 1, 1, '2026-06-15').taxJpyPerPersonPerNight).toBe(200)
+  })
+})
+
+// Known answers taken from the published Tokyo schedule, not from the
+// engine: below the ¥13,000 floor the stay is exempt outright, and above it
+// fractional yen are truncated.
+describe('percentage tax exemption floor (Tokyo 2027)', () => {
+  it.each([
+    [10000, 0],
+    [12999, 0],
+    [13000, 390],
+    [13017, 390],
+    [20000, 600],
+  ])('¥%i/person/night -> ¥%i', (rate, expected) => {
+    expect(lodgingTax(testPriceData.taxes, 'tokyo', rate, 1, 1, '2027-06-01').taxJpyPerPersonPerNight).toBe(expected)
   })
 })

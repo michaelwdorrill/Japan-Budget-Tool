@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { addDaysToIsoDate, daysBetweenIsoDates, findOverlappingSeason, legStartDates, resolveReferenceDate } from './dateUtils'
+import {
+  addDaysToIsoDate,
+  daysBetweenIsoDates,
+  findOverlappingSeasons,
+  legNightDates,
+  legStartDates,
+  resolveReferenceDate,
+} from './dateUtils'
 import { testPriceData } from './testFixtures/priceData'
 import { baseTripConfig } from './testFixtures/tripConfig'
 import type { Leg } from './trip'
@@ -94,7 +101,17 @@ describe('legStartDates', () => {
   })
 })
 
-describe('findOverlappingSeason', () => {
+describe('legNightDates', () => {
+  it('returns one date per night, starting at the leg start', () => {
+    expect(legNightDates('2026-06-13', 3)).toEqual(['2026-06-13', '2026-06-14', '2026-06-15'])
+  })
+
+  it('returns an empty array for a zero-night waypoint leg', () => {
+    expect(legNightDates('2026-06-13', 0)).toEqual([])
+  })
+})
+
+describe('findOverlappingSeasons', () => {
   const peakSeason = {
     id: 'test_peak',
     label: 'Test Peak',
@@ -103,6 +120,19 @@ describe('findOverlappingSeason', () => {
     severity: 'peak' as const,
     lodgingMultiplierLow: 1.4,
     lodgingMultiplierHigh: 2.2,
+    advice: 'test',
+    asOf: '2026-01-01',
+    source: 'test',
+    confidence: 'high' as const,
+  }
+  const goldenWeek = {
+    id: 'test_golden_week',
+    label: 'Test Golden Week',
+    startMonthDay: '04-29',
+    endMonthDay: '05-05',
+    severity: 'peak' as const,
+    lodgingMultiplierLow: 1.5,
+    lodgingMultiplierHigh: 2.0,
     advice: 'test',
     asOf: '2026-01-01',
     source: 'test',
@@ -121,28 +151,34 @@ describe('findOverlappingSeason', () => {
     source: 'test',
     confidence: 'high' as const,
   }
-  const seasons = [peakSeason, newYearSeason]
+  const seasons = [peakSeason, goldenWeek, newYearSeason]
 
   it('finds a season overlapping the leg start date itself', () => {
-    expect(findOverlappingSeason('2026-03-25', 2, seasons)?.id).toBe('test_peak')
+    expect(findOverlappingSeasons('2026-03-25', 2, seasons).map((s) => s.id)).toEqual(['test_peak'])
   })
 
   it('finds a season overlapping a later night in the leg, not just the start', () => {
-    // Starts 2 days before the window opens, but the 2-night stay reaches into it.
-    expect(findOverlappingSeason('2026-03-18', 3, seasons)?.id).toBe('test_peak')
+    // Starts 2 days before the window opens, but the 3-night stay reaches into it.
+    expect(findOverlappingSeasons('2026-03-18', 3, seasons).map((s) => s.id)).toEqual(['test_peak'])
   })
 
-  it('returns null when no night in the leg falls in any season window', () => {
-    expect(findOverlappingSeason('2026-06-01', 3, seasons)).toBeNull()
+  it('returns every distinct window a long leg touches, not just the first', () => {
+    // 2026-04-08 + 30 nights runs through the tail of the peak window and
+    // then into Golden Week. Reporting only the first would hide the second.
+    expect(findOverlappingSeasons('2026-04-08', 30, seasons).map((s) => s.id)).toEqual(['test_peak', 'test_golden_week'])
+  })
+
+  it('returns an empty array when no night falls in any window', () => {
+    expect(findOverlappingSeasons('2026-06-01', 3, seasons)).toEqual([])
   })
 
   it('handles a season window that wraps the calendar year boundary', () => {
-    expect(findOverlappingSeason('2026-12-30', 1, seasons)?.id).toBe('test_new_year')
-    expect(findOverlappingSeason('2027-01-02', 1, seasons)?.id).toBe('test_new_year')
+    expect(findOverlappingSeasons('2026-12-30', 1, seasons).map((s) => s.id)).toEqual(['test_new_year'])
+    expect(findOverlappingSeasons('2027-01-02', 1, seasons).map((s) => s.id)).toEqual(['test_new_year'])
   })
 
   it('treats a 0-night leg as a single-night check on its start date', () => {
-    expect(findOverlappingSeason('2026-03-25', 0, seasons)?.id).toBe('test_peak')
-    expect(findOverlappingSeason('2026-06-01', 0, seasons)).toBeNull()
+    expect(findOverlappingSeasons('2026-03-25', 0, seasons).map((s) => s.id)).toEqual(['test_peak'])
+    expect(findOverlappingSeasons('2026-06-01', 0, seasons)).toEqual([])
   })
 })

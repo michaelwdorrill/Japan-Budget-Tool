@@ -47,9 +47,14 @@ describe('computeBudget (hand-computed fixture)', () => {
   it('matches the hand-computed total to the yen', () => {
     const result = computeBudget(handComputedConfig(), testPriceData, new Date('2026-01-01T00:00:00Z'))
 
-    // A: 360000 (airfare) + 22500 (fees) + 9000 (departure tax) + 15000 (home-side) + 24000 (insurance) = 430500
-    expect(result.fixedCostsJpy).toBe(430500)
-    expect(result.totalsByCategory.getting_there).toBe(430500)
+    // A: 360000 (airfare) + 22500 (fees) + 3000 (departure tax) + 15000 (home-side) + 24000 (insurance) = 424500
+    //
+    // Departure tax is now charged at the rate in force on the departure
+    // date. The trip starts 2026-06-01 and runs 4 nights, so departure is
+    // 2026-06-05 — before the fixture's 2026-07-01 increase — and the rate
+    // is ¥1,000/person, not ¥3,000.
+    expect(result.fixedCostsJpy).toBe(424500)
+    expect(result.totalsByCategory.getting_there).toBe(424500)
 
     // B: (40000 room + 600 tax) tokyo + (48000 room + 2400 tax) kyoto = 91000
     expect(result.totalsByCategory.lodging).toBe(91000)
@@ -80,9 +85,15 @@ describe('computeBudget (hand-computed fixture)', () => {
     expect(result.contingencyJpy).toBe(contingencyJpy)
     expect(result.totalsByCategory.reserves).toBe(contingencyJpy)
 
-    expect(result.totalJpyParty).toBe(430500 + 413550 + 41355)
-    expect(result.totalJpyParty).toBe(885405)
-    expect(result.totalJpyPerPerson).toBe(295135)
+    expect(result.totalJpyParty).toBe(424500 + 413550 + 41355)
+    expect(result.totalJpyParty).toBe(879405)
+    expect(result.totalJpyPerPerson).toBe(293135)
+
+    // The airfare and ticket fees were entered in the home currency, so
+    // they are tracked as a fixed home-currency amount and held out of the
+    // JPY ledger's FX/card-fee exposure: (800 + 50) x 3 travellers.
+    expect(result.fixedHomeCurrencyParty).toBe((800 + 50) * 3)
+    expect(result.jpyLedgerParty).toBe(879405 - (360000 + 22500))
 
     expect(result.pointsOpportunityCostUsd).toBe(0)
     expect(result.referenceDate).toBe('2026-06-01')

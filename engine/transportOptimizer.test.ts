@@ -39,7 +39,8 @@ describe('optimizeTransport (unit, small fixture)', () => {
     // Discount product (Kodama, ¥10,000) beats point-to-point (¥14,000) beats
     // both national pass tiers (¥20,000 and ¥50,000) for a single short journey.
     expect(options[0].id).toBe('discount_products')
-    expect(options[0].totalJpy).toBe(10000)
+    // The cheapest matching product (¥6,500 bus), not the first in the data.
+    expect(options[0].totalJpy).toBe(6500)
     expect(options.find((o) => o.id === 'point_to_point')?.totalJpy).toBe(14000)
     expect(options.find((o) => o.id === 'jr_test_3day_ordinary')?.totalJpy).toBe(20000)
     expect(options.find((o) => o.id === 'jr_test_7day_ordinary')?.totalJpy).toBe(50000)
@@ -109,9 +110,11 @@ describe('optimizeTransport (unit, small fixture)', () => {
       },
     })
     const discount = findTransportOption(config, testPriceData, 'discount_products')
-    // Kodama (¥10,000) for tokyo->kyoto + bus (¥300) for kyoto->osaka.
-    expect(discount.totalJpy).toBe(10300)
-    expect(discount.addedTravelTimeMinutes).toBe(50 + 300)
+    // Cheapest per journey: ¥6,500 bus for tokyo->kyoto (beating the
+    // ¥10,000 Kodama) + ¥300 bus for kyoto->osaka.
+    expect(discount.totalJpy).toBe(6800)
+    // Both substitutions are buses now, so both carry the bus time penalty.
+    expect(discount.addedTravelTimeMinutes).toBe(300 + 300)
   })
 
   it('slides the pass window to capture the highest-value cluster of journeys', () => {
@@ -230,5 +233,57 @@ describe('optimizeTransport known-answer gate (§9 Phase 4, real seed data)', ()
     const chosenId = options[0].id
     expect(chosenId).toBe('jr_national_7day_ordinary')
     expect(options[0].totalJpy).toBeLessThan(options.find((o) => o.id === 'point_to_point')!.totalJpy)
+  })
+})
+
+// Coverage and validity integrity — the defects that let the optimizer
+// recommend an option cheaper than anything actually purchasable.
+describe('pass coverage and product validity', () => {
+  function tripConfig(legs: Array<{ cityId: string; nights: number }>, over: Record<string, unknown> = {}) {
+    return baseTripConfig({
+      party: { adults: 1, children: [], rooms: 1 },
+      timing: { startDate: '2026-09-01', season: null, nights: legs.reduce((s, l) => s + l.nights, 0) },
+      itinerary: {
+        arrivalAirport: 'NRT',
+        departureAirport: 'NRT',
+        legs: legs.map((l) => legWith({ cityId: l.cityId, nights: l.nights })),
+      },
+      transport: { strategy: 'auto', railClass: 'ordinary', luggageForwarding: false },
+      ...over,
+    })
+  }
+
+  it('leaves a private-rail fare in the paid remainder of a JR pass option', () => {
+    const config = tripConfig([{ cityId: 'tokyo', nights: 2 }, { cityId: 'hakone', nights: 2 }])
+    const pass = optimizeTransport(config, testPriceData).options.find((o) => o.id === 'jr_test_7day_ordinary')!
+    // ¥50,000 pass + the ¥2,470 private fare it cannot cover. Treating every
+    // edge as pass-eligible made this option look ¥2,470 cheaper than it is.
+    expect(pass.totalJpy).toBe(50000 + 2470)
+  })
+
+  it('does not offer an ordinary regional pass for a Green-class request', () => {
+    const green = tripConfig([{ cityId: 'kyoto', nights: 2 }, { cityId: 'osaka', nights: 2 }], {
+      transport: { strategy: 'auto', railClass: 'green', luggageForwarding: false },
+    })
+    expect(optimizeTransport(green, testPriceData).options.map((o) => o.id)).not.toContain('test_regional_kansai')
+  })
+
+  it('does not rank a product whose sales ended before the travel date', () => {
+    const config = tripConfig([{ cityId: 'tokyo', nights: 2 }, { cityId: 'kyoto', nights: 2 }])
+    expect(optimizeTransport(config, testPriceData).options.map((o) => o.id)).not.toContain('test_regional_withdrawn')
+  })
+
+  it('still ranks that product for travel dated before its sales end', () => {
+    const config = tripConfig([{ cityId: 'tokyo', nights: 2 }, { cityId: 'kyoto', nights: 2 }], {
+      timing: { startDate: '2026-02-01', season: null, nights: 4 },
+    })
+    expect(optimizeTransport(config, testPriceData).options.map((o) => o.id)).toContain('test_regional_withdrawn')
+  })
+
+  it('substitutes the cheapest matching discount product, not the first in the data', () => {
+    const config = tripConfig([{ cityId: 'tokyo', nights: 2 }, { cityId: 'kyoto', nights: 2 }])
+    const discount = optimizeTransport(config, testPriceData).options.find((o) => o.id.includes('discount'))!
+    // The ¥6,500 bus beats the ¥10,000 Kodama that appears first in the fixture.
+    expect(discount.totalJpy).toBe(6500)
   })
 })

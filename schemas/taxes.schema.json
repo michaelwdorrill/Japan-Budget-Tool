@@ -36,6 +36,7 @@
           },
           "flatTaxJpy": { "type": "integer", "minimum": 0 },
           "percentageOfRate": { "type": "number", "minimum": 0, "maximum": 100 },
+          "exemptionBelowJpy": { "type": "integer", "minimum": 0 },
           "bracketEdgeWarningThresholdPct": { "type": "number", "minimum": 0, "maximum": 100 },
           "asOf": { "type": "string", "format": "date" },
           "source": { "type": "string", "minLength": 1 },
@@ -45,18 +46,25 @@
       }
     },
     "departureTax": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "amountJpy", "basis", "collectedVia", "asOf", "source", "confidence"],
-      "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "amountJpy": { "type": "integer", "minimum": 0 },
-        "basis": { "type": "string", "const": "per_person_per_trip" },
-        "collectedVia": { "type": "string" },
-        "asOf": { "type": "string", "format": "date" },
-        "source": { "type": "string", "minLength": 1 },
-        "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
-        "notes": { "type": "string" }
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "effectiveFrom", "effectiveTo", "amountJpy", "basis", "collectedVia", "asOf", "source", "confidence"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "effectiveFrom": { "type": "string", "format": "date" },
+          "effectiveTo": { "type": ["string", "null"], "format": "date" },
+          "amountJpy": { "type": "integer", "minimum": 0 },
+          "basis": { "type": "string", "const": "per_person_per_trip" },
+          "collectedVia": { "type": "string" },
+          "exemptBelowAge": { "type": "integer", "minimum": 0 },
+          "asOf": { "type": "string", "format": "date" },
+          "source": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+          "notes": { "type": "string" }
+        }
       }
     }
   }

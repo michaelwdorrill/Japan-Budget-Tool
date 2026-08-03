@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeSensitivity } from './sensitivity'
+import { computeBudget } from './budget'
 import { testPriceData } from './testFixtures/priceData'
 import { baseTripConfig } from './testFixtures/tripConfig'
 import type { Leg } from './trip'
@@ -47,7 +48,10 @@ describe('computeSensitivity', () => {
         'activities',
       ]),
     )
-    const impacts = factors.map((f) => f.impactJpyPerPerson)
+    // Sorted by home-currency impact — the unit the headline is shown in.
+    // Sorting by JPY impact made the FX factor rank last at exactly zero,
+    // because moving the exchange rate cannot change a JPY cost.
+    const impacts = factors.map((f) => f.impactHomePerPerson)
     expect(impacts).toEqual([...impacts].sort((a, b) => b - a))
   })
 
@@ -57,6 +61,8 @@ describe('computeSensitivity', () => {
       expect(f.impactJpyPerPerson).toBeGreaterThanOrEqual(0)
       expect(f.lowJpyPerPerson).toBeLessThanOrEqual(f.highJpyPerPerson)
       expect(f.impactJpyPerPerson).toBe(f.highJpyPerPerson - f.lowJpyPerPerson)
+      expect(f.impactHomePerPerson).toBeGreaterThanOrEqual(0)
+      expect(f.lowHomePerPerson).toBeLessThanOrEqual(f.highHomePerPerson)
     }
   })
 
@@ -113,5 +119,35 @@ describe('computeSensitivity', () => {
     const before = JSON.stringify(config)
     computeSensitivity(config, testPriceData)
     expect(JSON.stringify(config)).toBe(before)
+  })
+})
+
+// Regression for the FX factor reporting zero impact. Measured in JPY,
+// moving the exchange rate is mechanically a no-op, so the tornado chart
+// told the user FX did not matter while the displayed budget visibly moved.
+describe('FX sensitivity is measured in the displayed currency', () => {
+  it('reports a real home-currency impact for the FX factor on a purely JPY trip', () => {
+    // No home-currency purchase, so every cost is JPY-denominated and the
+    // JPY impact of moving the rate is exactly zero — yet the traveller's
+    // displayed budget moves. That gap is the bug this measures.
+    const jpyOnly = baseTripConfig({
+      timing: { startDate: '2026-06-01', season: null, nights: 3 },
+      flight: { mode: 'exclude', taxesAndFeesUsd: 0 },
+    })
+    const fx = computeSensitivity(jpyOnly, testPriceData).find((f) => f.id === 'fx_rate')!
+    expect(fx.impactJpyPerPerson).toBe(0)
+    expect(fx.impactHomePerPerson).toBeGreaterThan(0)
+  })
+
+  it('leaves a fixed home-currency airfare untouched by the FX factor', () => {
+    // The airfare's JPY presentation value moves with the rate, but the
+    // traveller already paid a fixed home-currency amount, so that part of
+    // the home-currency total must not move.
+    const withAirfare = baseTripConfig({
+      timing: { startDate: '2026-06-01', season: null, nights: 3 },
+      flight: { mode: 'cash', cashEstimateUsd: 900, taxesAndFeesUsd: 100 },
+    })
+    const budget = computeBudget(withAirfare, testPriceData)
+    expect(budget.fixedHomeCurrencyParty).toBe((900 + 100) * 2)
   })
 })

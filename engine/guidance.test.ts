@@ -19,12 +19,34 @@ function legWith(overrides: Partial<Leg>): Leg {
   }
 }
 
-function messagesFor(config: TripConfig, ruleId: string, includeSeasonShiftCounterfactual = false) {
+function messagesFor(config: TripConfig, ruleId: string) {
   const budget = computeBudget(config, testPriceData)
-  return computeGuidance(config, testPriceData, budget, { includeSeasonShiftCounterfactual }).filter((m) => m.ruleId === ruleId)
+  return computeGuidance(config, testPriceData, budget).filter((m) => m.ruleId === ruleId)
 }
 
 describe('computeGuidance (§5.2)', () => {
+  describe('trip-length-mismatch', () => {
+    it('warns when the declared length and the priced itinerary disagree', () => {
+      const config = baseTripConfig({
+        timing: { startDate: '2026-06-01', season: null, nights: 10 },
+        itinerary: { arrivalAirport: 'NRT', departureAirport: 'NRT', legs: [legWith({ cityId: 'tokyo', nights: 3 })] },
+      })
+      const messages = messagesFor(config, 'trip-length-mismatch')
+      expect(messages).toHaveLength(1)
+      expect(messages[0].severity).toBe('warning')
+      expect(messages[0].message).toContain('3 nights')
+      expect(messages[0].message).toContain('10')
+    })
+
+    it('does not fire when they agree', () => {
+      const config = baseTripConfig({
+        timing: { startDate: '2026-06-01', season: null, nights: 3 },
+        itinerary: { arrivalAirport: 'NRT', departureAirport: 'NRT', legs: [legWith({ cityId: 'tokyo', nights: 3 })] },
+      })
+      expect(messagesFor(config, 'trip-length-mismatch')).toHaveLength(0)
+    })
+  })
+
   describe('bracket-edge-warning', () => {
     it('fires when a leg lodging rate sits within the warning threshold of a Kyoto tax bracket edge', () => {
       const config = baseTripConfig({
@@ -139,8 +161,14 @@ describe('computeGuidance (§5.2)', () => {
   })
 
   describe('laundry-note', () => {
-    it('fires for a trip over 10 nights', () => {
-      const config = baseTripConfig({ timing: { startDate: '2026-06-01', season: null, nights: 11 } })
+    it('fires for an itinerary over 10 nights', () => {
+      // The rule reads the length actually priced, so the itinerary has to
+      // carry the nights — bumping only the declared figure is exactly the
+      // divergence the trip-length rule warns about.
+      const config = baseTripConfig({
+        timing: { startDate: '2026-06-01', season: null, nights: 11 },
+        itinerary: { arrivalAirport: 'NRT', departureAirport: 'NRT', legs: [legWith({ cityId: 'tokyo', nights: 11 })] },
+      })
       expect(messagesFor(config, 'laundry-note')).toHaveLength(1)
     })
 
@@ -210,22 +238,45 @@ describe('computeGuidance (§5.2)', () => {
     })
   })
 
-  describe('season-shift-counterfactual (§5.1)', () => {
-    it('fires with a positive P80 delta when a leg overlaps a peak season', () => {
+  // §5.1, corrected. A season used to produce a P80 "saving" from shifting
+  // the trip, which only worked because the engine multiplied room rates by
+  // a seasonal coefficient. That pricing rule was wrong and is gone, so a
+  // season now warns about scarcity and carries no cost delta.
+  describe('season-scarcity-warning (§5.1)', () => {
+    it('warns when a leg overlaps a peak season, names the cheaper window, and asserts no cost delta', () => {
       const config = baseTripConfig({ timing: { startDate: '2026-03-25', season: null, nights: 3 } })
-      const messages = messagesFor(config, 'season-shift-counterfactual', true)
+      const messages = messagesFor(config, 'season-scarcity-warning')
       expect(messages).toHaveLength(1)
-      expect(messages[0].costDeltaJpy).toBeGreaterThan(0)
+      expect(messages[0].severity).toBe('warning')
+      expect(messages[0].message).toContain('Test season')
+      // The nearest sweet_spot window is named as an alternative.
+      expect(messages[0].message).toContain('Test shoulder season')
+      // No invented saving: the tool has no quote for those dates.
+      expect(messages[0].costDeltaJpy).toBeUndefined()
     })
 
     it('does not fire when no leg overlaps a season window', () => {
-      const messages = messagesFor(baseTripConfig(), 'season-shift-counterfactual', true)
-      expect(messages).toHaveLength(0)
+      expect(messagesFor(baseTripConfig(), 'season-scarcity-warning')).toHaveLength(0)
     })
 
-    it('is skipped entirely when includeSeasonShiftCounterfactual is false, even if a season overlaps', () => {
-      const config = baseTripConfig({ timing: { startDate: '2026-03-25', season: null, nights: 3 } })
-      expect(messagesFor(config, 'season-shift-counterfactual', false)).toHaveLength(0)
+    it('reports a sweet-spot window as good news rather than a warning', () => {
+      // test_shoulder_season runs 08-15 to 09-15 in the fixture.
+      const config = baseTripConfig({ timing: { startDate: '2026-08-20', season: null, nights: 3 } })
+      const messages = messagesFor(config, 'season-sweet-spot')
+      expect(messages).toHaveLength(1)
+      expect(messages[0].severity).toBe('info')
+    })
+
+    it('warns once per distinct season even when several legs touch the same window', () => {
+      const config = baseTripConfig({
+        timing: { startDate: '2026-03-25', season: null, nights: 4 },
+        itinerary: {
+          arrivalAirport: 'NRT',
+          departureAirport: 'NRT',
+          legs: [legWith({ cityId: 'tokyo', nights: 2 }), legWith({ cityId: 'tokyo', nights: 2 })],
+        },
+      })
+      expect(messagesFor(config, 'season-scarcity-warning')).toHaveLength(1)
     })
   })
 

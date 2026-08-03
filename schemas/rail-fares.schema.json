@@ -6,22 +6,93 @@
   "items": {
     "type": "object",
     "additionalProperties": false,
-    "required": ["id", "fromCityId", "toCityId", "bidirectional", "mode", "line", "durationMinutes", "fareJpyUnreserved", "fareJpyReserved", "asOf", "source", "confidence"],
+    "required": [
+      "id",
+      "fromCityId",
+      "toCityId",
+      "bidirectional",
+      "mode",
+      "line",
+      "durationMinutes",
+      "fareJpyUnreserved",
+      "fareJpyReserved",
+      "asOf",
+      "source",
+      "confidence",
+      "operator"
+    ],
     "properties": {
-      "id": { "type": "string", "minLength": 1 },
-      "fromCityId": { "type": "string" },
-      "toCityId": { "type": "string" },
-      "bidirectional": { "type": "boolean" },
-      "mode": { "type": "string", "enum": ["shinkansen", "limited_express", "local", "bus", "flight"] },
-      "line": { "type": "string" },
-      "durationMinutes": { "type": "integer", "minimum": 0 },
-      "fareJpyUnreserved": { "type": "integer", "minimum": 0 },
-      "fareJpyReserved": { "type": "integer", "minimum": 0 },
-      "fareJpyGreenCar": { "type": "integer", "minimum": 0 },
-      "asOf": { "type": "string", "format": "date" },
-      "source": { "type": "string", "minLength": 1 },
-      "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
-      "notes": { "type": "string" }
+      "id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "fromCityId": {
+        "type": "string"
+      },
+      "toCityId": {
+        "type": "string"
+      },
+      "bidirectional": {
+        "type": "boolean"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "shinkansen",
+          "limited_express",
+          "local",
+          "bus",
+          "flight"
+        ]
+      },
+      "line": {
+        "type": "string"
+      },
+      "durationMinutes": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "fareJpyUnreserved": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "fareJpyReserved": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "fareJpyGreenCar": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "asOf": {
+        "type": "string",
+        "format": "date"
+      },
+      "source": {
+        "type": "string",
+        "minLength": 1
+      },
+      "confidence": {
+        "type": "string",
+        "enum": [
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      },
+      "operator": {
+        "type": "string",
+        "enum": [
+          "jr",
+          "private",
+          "bus",
+          "mixed"
+        ],
+        "description": "Who runs the service. Only wholly-JR edges can be covered by a JR pass; private, bus and mixed-operator edges must stay in a pass option\u2019s paid remainder."
+      }
     }
   }
 }

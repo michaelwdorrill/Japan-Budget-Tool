@@ -118,7 +118,10 @@ function buildHistogram(sortedValues: number[], binCount = DEFAULT_HISTOGRAM_BIN
 const LODGING_MARKET_FACTOR_STD_DEV = 0.08
 const FOOD_MARKET_FACTOR_STD_DEV = 0.08
 
-function sampleTrialTotalJpy(rng: Rng, lineItems: LineItem[], contingencyPct: number, correlated: boolean): number {
+// Samples one trial's JPY ledger — the spend actually exposed to the yen.
+// Lines already fixed in the traveller's home currency are excluded here
+// and added back, unconverted, by the caller.
+function sampleTrialJpyLedger(rng: Rng, lineItems: LineItem[], contingencyPct: number, correlated: boolean): number {
   const lodgingFactor = correlated ? sampleNormal(rng, 1.0, LODGING_MARKET_FACTOR_STD_DEV) : null
   const foodFactor = correlated ? sampleNormal(rng, 1.0, FOOD_MARKET_FACTOR_STD_DEV) : null
 
@@ -126,12 +129,22 @@ function sampleTrialTotalJpy(rng: Rng, lineItems: LineItem[], contingencyPct: nu
   let variableTotal = 0
 
   for (const item of lineItems) {
+    // A purchase settled in the home currency is not part of the JPY
+    // ledger at all: it must not be FX-sampled or card-fee'd.
+    if (item.fixedHomeCurrencyAmount !== undefined) continue
+
     let sampled = samplePert(rng, item.lowJpy, item.amountJpy, item.highJpy)
 
-    if (item.category === 'lodging') {
-      sampled *= correlated ? (lodgingFactor as number) : sampleNormal(rng, 1.0, LODGING_MARKET_FACTOR_STD_DEV)
-    } else if (item.category === 'food') {
-      sampled *= correlated ? (foodFactor as number) : sampleNormal(rng, 1.0, FOOD_MARKET_FACTOR_STD_DEV)
+    // Statutory charges and exact user-entered figures are point masses.
+    // They do not move when the hotel or restaurant market moves, so they
+    // are held out of the shared market factors — a fixed ¥100 lodging tax
+    // previously spread to roughly ¥90-¥110 across trials.
+    if (item.uncertainty !== 'fixed') {
+      if (item.category === 'lodging') {
+        sampled *= correlated ? (lodgingFactor as number) : sampleNormal(rng, 1.0, LODGING_MARKET_FACTOR_STD_DEV)
+      } else if (item.category === 'food') {
+        sampled *= correlated ? (foodFactor as number) : sampleNormal(rng, 1.0, FOOD_MARKET_FACTOR_STD_DEV)
+      }
     }
 
     if (VARIABLE_CATEGORIES.includes(item.category)) {
@@ -181,12 +194,26 @@ export function runMonteCarlo(config: TripConfig, priceData: PriceData, options:
   const jpyTotals = new Array<number>(trials)
   const usdTotals = new Array<number>(trials)
 
+  // Purchases already settled in the home currency are constant across
+  // every trial. They are added after conversion, never through it:
+  //
+  //   home-currency total = fixed home-currency purchases
+  //                       + (sampled JPY ledger / sampled FX rate, + card fee)
+  //
+  // Previously a booked $1,000 ticket was converted into JPY, FX-stressed,
+  // and charged a Japan card fee, so a fixed purchase showed up in the
+  // headline as a range.
+  const fixedHomeCurrency = deterministic.fixedHomeCurrencyParty
+
   for (let t = 0; t < trials; t++) {
-    const totalJpy = sampleTrialTotalJpy(rng, deterministic.lineItems, config.money.contingencyPct, correlated)
-    jpyTotals[t] = totalJpy
+    const jpyLedger = sampleTrialJpyLedger(rng, deterministic.lineItems, config.money.contingencyPct, correlated)
+    // The reported JPY total still includes the home-currency purchases at
+    // the nominal rate, so the JPY view reconciles with the deterministic
+    // ledger; only the home-currency view holds them out of FX.
+    jpyTotals[t] = jpyLedger + (deterministic.totalJpyParty - deterministic.jpyLedgerParty)
 
     const fxRate = samplePert(rng, fxLow, jpyPerUsd, fxHigh)
-    usdTotals[t] = jpyToUsd(totalJpy, fxRate, { cardFxFeePct: config.money.cardFxFeePct })
+    usdTotals[t] = fixedHomeCurrency + jpyToUsd(jpyLedger, fxRate, { cardFxFeePct: config.money.cardFxFeePct })
   }
 
   jpyTotals.sort((a, b) => a - b)

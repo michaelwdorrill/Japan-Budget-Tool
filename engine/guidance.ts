@@ -4,7 +4,6 @@ import type { BudgetResult } from './budget'
 import { MEALS_INCLUDED_TIERS } from './food'
 import { multiplyByBasisRange, totalPeople } from './basis'
 import { findPriceById } from './priceLookup'
-import { runMonteCarlo } from './monteCarlo'
 import { jpyToUsd } from './money'
 
 // §5.2: a declarative rule table, deliberately not embedded in UI
@@ -27,13 +26,6 @@ export interface GuidanceContext {
   config: TripConfig
   priceData: PriceData
   budget: BudgetResult
-}
-
-export interface GuidanceOptions {
-  // The season-shift counterfactual runs two 10,000-trial Monte Carlo
-  // simulations; skip it for callers (e.g. fast unit tests of the other
-  // 15 rules) that don't need it. Defaults on for real use (CLI, UI).
-  includeSeasonShiftCounterfactual?: boolean
 }
 
 type GuidanceRule = (ctx: GuidanceContext) => GuidanceMessage[]
@@ -115,7 +107,9 @@ const advanceBookingLeadTimeRule: GuidanceRule = (ctx) => {
 }
 
 const laundryNoteRule: GuidanceRule = (ctx) => {
-  if (ctx.config.timing.nights <= 10) return []
+  // Uses the length actually priced, not the declared one — quoting a
+  // declared figure the budget ignores would be the same defect twice.
+  if (ctx.budget.itineraryNights <= 10) return []
   const record = findPriceById(ctx.priceData.prices, 'laundry')
   const people = totalPeople(ctx.config.party)
   const range = multiplyByBasisRange(record.basis, record, { people })
@@ -124,7 +118,7 @@ const laundryNoteRule: GuidanceRule = (ctx) => {
       ruleId: 'laundry-note',
       category: 'logistics',
       severity: 'info',
-      message: `A ${ctx.config.timing.nights}-night trip usually means at least one laundry run (coin laundry or a hotel service) — budget about ${formatJpy(range.amountJpy)}, or pack lighter and plan around it.`,
+      message: `A ${ctx.budget.itineraryNights}-night trip usually means at least one laundry run (coin laundry or a hotel service) — budget about ${formatJpy(range.amountJpy)}, or pack lighter and plan around it.`,
       costDeltaJpy: range.amountJpy,
     },
   ]
@@ -166,6 +160,22 @@ const kyotoOsakaBaseDeltaRule: GuidanceRule = (ctx) =>
         },
       ]
     })
+
+// The headline prices the itinerary, not the number typed in step 1. When
+// the two disagree the estimate is for a different trip than the one the
+// traveller thinks they described, so this is a warning, not a note.
+const tripLengthMismatchRule: GuidanceRule = (ctx) => {
+  if (!ctx.budget.tripLengthMismatch) return []
+  const { itineraryNights, declaredNights } = ctx.budget
+  return [
+    {
+      ruleId: 'trip-length-mismatch',
+      category: 'logistics',
+      severity: 'warning',
+      message: `This budget prices ${itineraryNights} night${itineraryNights === 1 ? '' : 's'} across your cities, but the trip length is set to ${declaredNights}. The total reflects the itinerary, not the declared length — fix one of them before trusting the number.`,
+    },
+  ]
+}
 
 const cashAtmsRule: GuidanceRule = () => [
   {
@@ -244,6 +254,7 @@ const childrenFareOccupancyRule: GuidanceRule = (ctx) => {
 // they'd be useful to a planner: money/logistics warnings first, then
 // always-on notes, then documents.
 const STATIC_RULES: GuidanceRule[] = [
+  tripLengthMismatchRule,
   bracketEdgeWarningRule,
   ryokanMealsConfirmationRule,
   onsenTattooPolicyRule,
@@ -259,6 +270,7 @@ const STATIC_RULES: GuidanceRule[] = [
   usPassportEntryRule,
   passportInsuranceMedsRule,
   childrenFareOccupancyRule,
+  seasonScarcityWarningRule,
 ]
 
 const NON_LEAP_YEAR_CUMULATIVE_DAYS = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
@@ -284,59 +296,63 @@ function nearestSweetSpotSeason(seasons: SeasonRecord[], fromMonthDay: string): 
   )
 }
 
-// §5.1: shifts a config's start date to the nearest shoulder ("sweet_spot")
-// season relative to `fromMonthDay`, keeping the reference date's year.
-// Returns null when there's no sweet_spot season in the data at all.
-// Exported so the "what if" panel (§6) can preview the same shift the
-// season-shift-counterfactual guidance rule quantifies, without
-// duplicating the nearest-season search.
-export function shiftToNearestShoulderSeason(config: TripConfig, priceData: PriceData, fromMonthDay: string, referenceDate: string): TripConfig | null {
-  const target = nearestSweetSpotSeason(priceData.seasons, fromMonthDay)
-  if (!target) return null
-
-  const referenceYear = referenceDate.slice(0, 4)
-  const shiftedStartDate = `${referenceYear}-${target.startMonthDay}`
-
-  return {
-    ...config,
-    timing: { ...config.timing, startDate: shiftedStartDate, season: null },
-  }
+// §5.1: the nearest shoulder ("sweet_spot") season relative to a peak
+// window, used by the scarcity warning below and by the "what if" panel to
+// suggest an alternative travel window. Returns null when the data
+// contains no sweet_spot season at all.
+export function nearestShoulderSeason(priceData: PriceData, fromMonthDay: string): SeasonRecord | null {
+  return nearestSweetSpotSeason(priceData.seasons, fromMonthDay)
 }
 
-// §5.1: for a trip that overlaps a peak/elevated season, quantify what
-// shifting to the nearest shoulder ("sweet_spot") season would save at the
-// P80 level — the single most actionable piece of guidance the tool can
-// give, since seasonal lodging multipliers are 1.4x-2.2x.
-function seasonShiftCounterfactualRule(ctx: GuidanceContext): GuidanceMessage[] {
+// §5.1, corrected. This used to quantify a P80 saving from shifting out of
+// a peak season, which only worked because the engine multiplied room
+// rates by a seasonal coefficient. That pricing rule was wrong: a peak
+// window is a statement about demand and availability, not a factor that
+// applies to a room whose rate the traveller has already been quoted.
+//
+// So the rule now does what a season can honestly support — warn about
+// scarcity, name the cheaper window, and tell the traveller to re-quote —
+// and carries no costDeltaJpy, because the tool has no defensible basis
+// for one without a real quote for those dates.
+function seasonScarcityWarningRule(ctx: GuidanceContext): GuidanceMessage[] {
   if (ctx.budget.seasonOverlaps.length === 0) return []
 
-  const overlap = ctx.budget.seasonOverlaps[0]
-  const shiftedConfig = shiftToNearestShoulderSeason(ctx.config, ctx.priceData, overlap.season.startMonthDay, ctx.budget.referenceDate)
-  if (!shiftedConfig) return []
-  const target = nearestSweetSpotSeason(ctx.priceData.seasons, overlap.season.startMonthDay)!
+  // seasonOverlaps can list the same window for several legs; warn once per
+  // distinct season.
+  const seen = new Set<string>()
+  const messages: GuidanceMessage[] = []
 
-  const baseline = runMonteCarlo(ctx.config, ctx.priceData, { seed: 1 })
-  const shifted = runMonteCarlo(shiftedConfig, ctx.priceData, { seed: 1 })
-  const deltaJpy = baseline.jpyParty.p80 - shifted.jpyParty.p80
-  if (deltaJpy <= 0) return []
+  for (const { season } of ctx.budget.seasonOverlaps) {
+    if (seen.has(season.id)) continue
+    seen.add(season.id)
 
-  const deltaUsd = jpyToUsd(deltaJpy, ctx.config.money.jpyPerUsd, { cardFxFeePct: ctx.config.money.cardFxFeePct })
+    if (season.severity === 'sweet_spot') {
+      messages.push({
+        ruleId: 'season-sweet-spot',
+        category: 'lodging',
+        severity: 'info',
+        message: `Part of this trip falls in ${season.label}, generally one of the better-value windows to travel. ${season.advice}`,
+      })
+      continue
+    }
 
-  return [
-    {
-      ruleId: 'season-shift-counterfactual',
+    const target = nearestShoulderSeason(ctx.priceData, season.startMonthDay)
+    const alternative = target
+      ? ` The nearest better-value window is ${target.label} (from about ${target.startMonthDay}) — worth pricing the same hotels there before committing.`
+      : ''
+
+    messages.push({
+      ruleId: 'season-scarcity-warning',
       category: 'lodging',
-      severity: 'info',
-      message: `This trip overlaps ${overlap.season.label} pricing. Shifting toward ${target.label} (starting around ${target.startMonthDay}) would cut the P80 estimate by about ${formatJpy(deltaJpy)} (~$${deltaUsd.toFixed(0)}).`,
-      costDeltaJpy: deltaJpy,
-    },
-  ]
+      severity: 'warning',
+      message: `Part of this trip falls in ${season.label} (${season.startMonthDay} to ${season.endMonthDay}), a ${season.severity === 'peak' ? 'peak' : 'busier'} window: rooms sell out early and rates quoted closer to the date are usually higher than the figures used here. ${season.advice} Re-quote the affected nights rather than trusting this estimate.${alternative}`,
+    })
+  }
+
+  return messages
 }
 
-export function computeGuidance(config: TripConfig, priceData: PriceData, budget: BudgetResult, options: GuidanceOptions = {}): GuidanceMessage[] {
+export function computeGuidance(config: TripConfig, priceData: PriceData, budget: BudgetResult): GuidanceMessage[] {
   const ctx: GuidanceContext = { config, priceData, budget }
-  const includeSeasonShift = options.includeSeasonShiftCounterfactual ?? true
-
-  const rules = includeSeasonShift ? [...STATIC_RULES, seasonShiftCounterfactualRule] : STATIC_RULES
-  return rules.flatMap((rule) => rule(ctx))
+  return STATIC_RULES.flatMap((rule) => rule(ctx))
 }

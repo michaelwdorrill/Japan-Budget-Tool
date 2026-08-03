@@ -30,6 +30,10 @@ export interface TripConfig {
   }
 
   itinerary: {
+    // NOT PRICED. Airport transfers and origin-dependent airfare are not
+    // modeled, so these fields record the intended routing but do not move
+    // the budget. There is deliberately no wizard control for them; keep it
+    // that way unless transfers are actually priced.
     arrivalAirport: AirportId
     departureAirport: AirportId // open-jaw supported and encouraged
     legs: Leg[]
@@ -85,6 +89,9 @@ export interface Leg {
   }
   activities: ActivitySelection[] // named picks with real prices
   activityTierFallback: ActivityTier // for unplanned days
+  // NOT PRICED. A day trip needs a combined rail-fare + admission model
+  // that does not exist yet, so selections here only feed the guidance
+  // layer's base-vs-relocate note. No wizard control exposes them.
   dayTrips: DayTripId[]
   splurgeMeals: number // count of high-end dinners on this leg
 }
