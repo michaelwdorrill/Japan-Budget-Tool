@@ -338,21 +338,220 @@ h1 {
 .calendar-window {
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 12px;
+  padding: 14px;
   margin-bottom: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-.calendar-window__assumptions {
+.calendar-window__flights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 16px;
+}
+
+/* ---- calendar ---- */
+
+.trip-calendar {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  background: var(--bg-subtle);
+  max-width: 420px;
+}
+
+.trip-calendar__header {
   display: flex;
-  gap: 16px;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
 }
 
-.calendar-window__summary {
+.trip-calendar__header button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  line-height: 1.2;
+}
+
+.trip-calendar__header button:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.trip-calendar__month {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.trip-calendar__weekdays,
+.trip-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.trip-calendar__weekdays span {
+  text-align: center;
   font-family: var(--mono);
-  font-size: 0.9rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding-bottom: 4px;
+}
+
+.trip-calendar__day {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.trip-calendar__day:hover {
+  border-color: var(--accent);
+}
+
+.trip-calendar__day--muted .trip-calendar__day-number {
+  opacity: 0.3;
+}
+
+/* Trip roles. Transit and partial days read as lighter than a full day on
+   the ground, so the block of usable time is what stands out. */
+.trip-calendar__day--outbound_transit,
+.trip-calendar__day--return_transit {
+  background: color-mix(in srgb, var(--text-muted) 22%, transparent);
+}
+
+.trip-calendar__day--arrival,
+.trip-calendar__day--departure {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+.trip-calendar__day--full {
+  background: var(--accent);
+  color: #fff;
+}
+
+.trip-calendar__day--endpoint {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* Season markers sit as a bar under the number so they never fight the
+   trip-role fill for the cell background. */
+.trip-calendar__day--peak::after,
+.trip-calendar__day--sweet::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 3px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.trip-calendar__day--peak::after {
+  background: var(--diverging-up);
+}
+
+.trip-calendar__day--sweet::after {
+  background: var(--series-3);
+}
+
+.trip-calendar__flag {
+  font-size: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.trip-calendar__legend {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.trip-calendar__legend li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+
+.trip-calendar__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.trip-calendar__swatch--transit {
+  background: color-mix(in srgb, var(--text-muted) 22%, transparent);
+  border: 1px solid var(--border);
+}
+.trip-calendar__swatch--partial {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.trip-calendar__swatch--full {
+  background: var(--accent);
+}
+.trip-calendar__swatch--peak {
+  background: var(--diverging-up);
+}
+.trip-calendar__swatch--sweet {
+  background: var(--series-3);
+}
+
+/* ---- derived window summary ---- */
+
+.trip-window-summary {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
+
+.trip-window-summary__line {
+  margin: 0 0 2px;
+  font-size: 0.88rem;
+}
+
+.trip-window-summary__figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 10px 0 8px;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.trip-window-summary__figures strong {
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.trip-window-summary__usable strong {
   color: var(--accent);
 }
 
