@@ -8,7 +8,9 @@ export type { BudgetResult } from './budget'
 // I2 (FX buffer / display-boundary conversion) is exposed via money.ts's
 // jpyToUsd/fxStress; the deterministic engine reports the total in JPY only.
 export { usdToJpy, jpyToUsd, fxStress } from './money'
-export { addDaysToIsoDate, daysBetweenIsoDates } from './dateUtils'
+export { addDaysToIsoDate, daysBetweenIsoDates, findOverlappingSeasons } from './dateUtils'
+export { computeTripWindow, tripDayRole } from './tripWindow'
+export type { TripWindow, TripWindowInput, DayPart, TripDayRole } from './tripWindow'
 export { multiplyByBasis, totalPeople, fareEquivalentPeople, childFareFraction } from './basis'
 export { lodgingTax, departureTax } from './tax'
 export { optimizeTransport, findTransportOption } from './transportOptimizer'

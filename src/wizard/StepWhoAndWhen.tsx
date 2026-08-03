@@ -1,10 +1,32 @@
 import { useEffect, useState } from 'react'
-import { addDaysToIsoDate, daysBetweenIsoDates } from '../../engine/index'
+import { computeTripWindow, type DayPart } from '../../engine/index'
 import { useTripConfig } from '../state/TripConfigContext'
 import { priceData } from '../data'
+import { TripCalendar } from '../components/TripCalendar'
 
-const DEFAULT_OUTBOUND_TRAVEL_DAYS = 1 // overnight flight + crossing the date line westbound
-const DEFAULT_RETURN_TRAVEL_DAYS = 0 // eastbound gains hours back; typically lands the same calendar day
+// Westbound across the date line normally lands the next calendar day;
+// eastbound normally lands the same day it departed. From the US east
+// coast to Tokyo that is the usual shape whether the flight is direct or
+// takes one connection — a connection makes the day longer, not later.
+const DEFAULT_OUTBOUND_TRAVEL_DAYS = 1
+const DEFAULT_RETURN_TRAVEL_DAYS = 0
+
+const DAY_PARTS: Array<{ value: DayPart; label: string }> = [
+  { value: 'morning', label: 'Morning' },
+  { value: 'midday', label: 'Midday' },
+  { value: 'afternoon', label: 'Afternoon' },
+  { value: 'evening', label: 'Evening' },
+]
+
+function formatLongDate(iso: string): string {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
 
 export function StepWhoAndWhen() {
   const { config, updateConfig } = useTripConfig()
@@ -23,19 +45,43 @@ export function StepWhoAndWhen() {
   const [returnDate, setReturnDate] = useState('')
   const [outboundTravelDays, setOutboundTravelDays] = useState(DEFAULT_OUTBOUND_TRAVEL_DAYS)
   const [returnTravelDays, setReturnTravelDays] = useState(DEFAULT_RETURN_TRAVEL_DAYS)
+  const [arrivalPart, setArrivalPart] = useState<DayPart>('afternoon')
+  const [departurePart, setDeparturePart] = useState<DayPart>('morning')
 
-  const japanArrivalDate = departDate ? addDaysToIsoDate(departDate, outboundTravelDays) : null
-  const japanDepartureDate = returnDate ? addDaysToIsoDate(returnDate, -returnTravelDays) : null
-  const calendarNights =
-    japanArrivalDate && japanDepartureDate ? daysBetweenIsoDates(japanArrivalDate, japanDepartureDate) : null
+  const tripWindow =
+    departDate && returnDate
+      ? computeTripWindow({
+          departHomeDate: departDate,
+          arriveHomeDate: returnDate,
+          outboundTransitDays: outboundTravelDays,
+          returnTransitDays: returnTravelDays,
+          arrivalPart,
+          departurePart,
+        })
+      : null
+
+  // Clicking the calendar sets the outbound date first, then the return.
+  // A third click (or any click before the current outbound) starts over,
+  // which is the least surprising behaviour for a two-endpoint picker.
+  const handlePickDate = (iso: string) => {
+    if (!departDate || (departDate && returnDate) || iso < departDate) {
+      setDepartDate(iso)
+      setReturnDate('')
+      return
+    }
+    setReturnDate(iso)
+  }
 
   useEffect(() => {
-    if (!calendarMode || !japanArrivalDate || calendarNights === null || calendarNights < 1) return
-    updateConfig((c) => ({ ...c, timing: { startDate: japanArrivalDate, season: null, nights: calendarNights } }))
-    // Only the calendar inputs should trigger this recompute — config is
-    // the thing being written, not read, here.
+    if (!calendarMode || !tripWindow?.valid) return
+    updateConfig((c) => ({
+      ...c,
+      timing: { startDate: tripWindow.japanArrivalDate, season: null, nights: tripWindow.lodgingNights },
+    }))
+    // Only the derived window should trigger the write-back; config is
+    // written here, not read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarMode, japanArrivalDate, calendarNights])
+  }, [calendarMode, tripWindow?.japanArrivalDate, tripWindow?.lodgingNights, tripWindow?.valid])
 
   const setAdults = (adults: number) => {
     updateConfig((c) => ({ ...c, party: { ...c.party, adults: Math.max(1, adults) } }))
@@ -120,18 +166,45 @@ export function StepWhoAndWhen() {
 
         {calendarMode ? (
           <div className="calendar-window">
-            <label>
-              Leave home
-              <input type="date" value={departDate} onChange={(e) => setDepartDate(e.target.value)} />
-            </label>
-            <label>
-              Arrive back home
-              <input type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} />
-            </label>
+            <p className="field-note">
+              {!departDate
+                ? 'Click the day you fly out of home.'
+                : !returnDate
+                  ? 'Now click the day you land back home.'
+                  : 'Click any earlier day to start over.'}
+            </p>
 
-            <div className="calendar-window__assumptions">
+            <TripCalendar
+              departHomeDate={departDate}
+              arriveHomeDate={returnDate}
+              window={tripWindow}
+              seasons={priceData.seasons}
+              onPickDate={handlePickDate}
+            />
+
+            <div className="calendar-window__flights">
               <label>
-                Outbound travel days
+                Land in Japan
+                <select value={arrivalPart} onChange={(e) => setArrivalPart(e.target.value as DayPart)}>
+                  {DAY_PARTS.map((p) => (
+                    <option key={p.value} value={p.value}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Fly home
+                <select value={departurePart} onChange={(e) => setDeparturePart(e.target.value as DayPart)}>
+                  {DAY_PARTS.map((p) => (
+                    <option key={p.value} value={p.value}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Outbound days in transit
                 <input
                   type="number"
                   min={0}
@@ -141,7 +214,7 @@ export function StepWhoAndWhen() {
                 />
               </label>
               <label>
-                Return travel days
+                Return days in transit
                 <input
                   type="number"
                   min={0}
@@ -152,24 +225,40 @@ export function StepWhoAndWhen() {
               </label>
             </div>
             <p className="field-note">
-              Days lost to the flight itself and crossing the date line — the defaults (1 outbound, 0 return) are a rough
-              typical for a US–Japan trip; adjust to match your actual itinerary once you have flights booked.
+              A DC-to-Tokyo flight crosses the date line and lands the next calendar day, so 1 outbound day in transit; the
+              flight home gains it back and usually lands the same day, so 0. That holds for a direct flight or one with a
+              single connection — a connection makes the journey longer, not later. Change these once you have real flight
+              times.
             </p>
 
-            {japanArrivalDate && japanDepartureDate && calendarNights !== null && calendarNights >= 1 && (
-              <p className="calendar-window__summary">
-                Arrive in Japan <strong>{japanArrivalDate}</strong>, depart <strong>{japanDepartureDate}</strong> —{' '}
-                <strong>
-                  {calendarNights} night{calendarNights === 1 ? '' : 's'}
-                </strong>{' '}
-                to fit everything into (step 2).
-              </p>
+            {tripWindow?.valid && (
+              <div className="trip-window-summary">
+                <p className="trip-window-summary__line">
+                  Land <strong>{formatLongDate(tripWindow.japanArrivalDate)}</strong> ({arrivalPart})
+                </p>
+                <p className="trip-window-summary__line">
+                  Fly home <strong>{formatLongDate(tripWindow.japanDepartureDate)}</strong> ({departurePart})
+                </p>
+                <div className="trip-window-summary__figures">
+                  <span>
+                    <strong>{tripWindow.lodgingNights}</strong> nights of lodging
+                  </span>
+                  <span>
+                    <strong>{tripWindow.fullDays}</strong> full days
+                  </span>
+                  <span className="trip-window-summary__usable">
+                    <strong>~{tripWindow.usableDays}</strong> usable days
+                  </span>
+                </div>
+                <p className="field-note">
+                  You pay for {tripWindow.lodgingNights} nights, but only {tripWindow.fullDays} of those days are untouched by a
+                  flight. Landing in the {arrivalPart} and flying home in the {departurePart} leaves roughly{' '}
+                  {tripWindow.usableDays} days you can actually plan into — that is the number to fit your itinerary into on
+                  step 2, not {tripWindow.lodgingNights}.
+                </p>
+              </div>
             )}
-            {calendarNights !== null && calendarNights < 1 && (
-              <p className="field-note field-note--warning">
-                That window leaves no nights in Japan — check your dates or the travel-day assumptions above.
-              </p>
-            )}
+            {tripWindow && !tripWindow.valid && <p className="field-note field-note--warning">{tripWindow.problem}</p>}
           </div>
         ) : (
           <>
